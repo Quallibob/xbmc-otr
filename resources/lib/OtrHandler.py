@@ -136,7 +136,7 @@ if __name__ == '__main__':
     from pprint import pprint
 
     otr = OtrHandler()
-    otr.login('mail@shellshark.de', 'fo5woniTho1ahQuu')
+    otr.login('', '')
     recordlist = otr.getRecordListDict()
     if 'FILE' in recordlist:
         for f in recordlist['FILE']:
