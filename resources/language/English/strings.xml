@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <strings>
-    <!-- Addon Settings Categories -->
+    <!-- Addon Login Settings -->
     <string id="30100">Login</string>
-    <!-- Addon Settings -->
-	<string id="30101">E-Mail</string>
-	<string id="30102">Password</string>
+    <string id="30101">E-Mail</string>
+    <string id="30102">Password</string>
+    <!-- Addon Quality Settings -->
+    <string id="30200">Quality Settings</string>
+    <string id="30201">Prefer HD version</string>
+    <string id="30202">Prefer HQ version</string>
+    <string id="30203">Prefer cut version</string>
     <!-- Message strings -->
     <string id="30300">Please set your OTR login in Addon Setup</string>
     <string id="30301">OTR Login Failed (%s)</string>
