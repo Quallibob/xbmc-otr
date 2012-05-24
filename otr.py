@@ -25,8 +25,6 @@ housekeeper = worker.housekeeper(_url)
 creator = worker.creator(_url)
 sender = worker.sender(_url)
 
-print int(_url.fragment)
-
 housekeeper.start()
 sender.send(creator.get(housekeeper.getOTR()))
 xbmcplugin.endOfDirectory(int(_url.fragment))
