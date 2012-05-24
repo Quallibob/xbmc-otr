@@ -150,7 +150,7 @@ class creator:
             infos['size'] = long(fileinfo['size'])
             infos['plot'] = "%s GWP (%s, %s, %s)\n" % (
                 fileinfo['cost'], 
-                fileinfo['type'], 
+                fileinfo['type'].replace('_', ' '), 
                 fileinfo['stream'],
                 getSizeStr(infos['size']*1024) )
             if 'DURATION' in element: infos['duration'] = element['DURATION'].split()[0]
@@ -164,7 +164,19 @@ class creator:
 
 
         def getFileInfo(element):
-            streams = ['HQMP4_geschnitten', 'HQMP4_Stream', 'HQMP4', 'MP4_geschnitten', 'MP4_Stream', 'MP4']
+            streams = ['MP4_Stream', 'MP4']
+            if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
+                streams.insert(0, 'MP4_geschnitten')
+            if self._xbmcaddon.getSetting('otrPreferHQ') == 'true':
+                streams.insert(0, 'HQMP4') 
+                streams.insert(0, 'HQMP4_Stream')
+                if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
+                    streams.insert(0, 'HQMP4_geschnitten')
+            if self._xbmcaddon.getSetting('otrPreferHD') == 'true':
+                streams.insert(0, 'HDMP4') 
+                streams.insert(0, 'HDMP4_Stream')
+                if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
+                    streams.insert(0, 'HDMP4_geschnitten')
             elementinfo = otr.getFileInfoDict(element['ID'], element['EPGID'], element['FILENAME'])
             for stream in streams: 
                 if getKey(elementinfo, stream): break
