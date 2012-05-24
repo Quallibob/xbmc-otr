@@ -148,8 +148,11 @@ class creator:
                 thumbnailImage='%sA.jpg' % getImageUrl(element['FILENAME']) )
             infos= {}
             infos['size'] = long(fileinfo['size'])
-            infos['plotoutline'] = "%s GWP (%s Stream, %s)" % (
-                fileinfo['cost'], fileinfo['type'], getSizeStr(infos['size']*1024) )
+            infos['plotoutline'] = "%s GWP (%s %s, %s)" % (
+                fileinfo['cost'], 
+                fileinfo['type'], 
+                fileinfo['stream'],
+                getSizeStr(infos['size']*1024) )
             if 'DURATION' in element: infos['duration'] = element['DURATION'].split()[0]
             if 'DOWNLOADCOUNT' in element: infos['playcount'] = int(element['DOWNLOADCOUNT'])
             if 'TITLE' in element: infos['title'] = element['TITLE']
@@ -161,16 +164,19 @@ class creator:
 
 
         def getFileInfo(element):
+            streams = ['HQMP4_geschnitten', 'HQMP4_Stream', 'HQMP4', 'MP4_geschnitten', 'MP4_Stream', 'MP4']
             elementinfo = otr.getFileInfoDict(element['ID'], element['EPGID'], element['FILENAME'])
-            stype = ( (getKey(elementinfo, 'MP4_Stream', 'FREE') and 'FREE') or
-                      (getKey(elementinfo, 'MP4_Stream', 'PRIO') and 'PRIO') or False ) 
+            for stream in streams: 
+                if getKey(elementinfo, stream): break
+            stype = ( (getKey(elementinfo, stream, 'FREE') and 'FREE') or
+                      (getKey(elementinfo, stream, 'PRIO') and 'PRIO') or False ) 
             if not stype: 
                 return False
             else:
-                size = getKey(elementinfo, 'MP4_Stream', 'SIZE')
-                uri  = getKey(elementinfo, 'MP4_Stream', stype)
-                gwp  = getKey(elementinfo, 'MP4_Stream', 'GWPCOSTS', stype)
-            return {'uri':uri, 'type': stype, 'cost': gwp, 'size':size}
+                size = getKey(elementinfo, stream, 'SIZE')
+                uri  = getKey(elementinfo, stream, stype)
+                gwp  = getKey(elementinfo, stream, 'GWPCOSTS', stype)
+            return {'uri':uri, 'type': stype, 'cost': gwp, 'size':size, 'stream':stream}
 
         prdialog = xbmcgui.DialogProgress()
         prdialog.create(self._xbmcaddon.getLocalizedString(30302))
