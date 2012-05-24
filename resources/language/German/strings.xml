@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+    <!-- Addon Settings Categories -->
+    <string id="30100">Local Library</string>
+    <!-- Addon Settings -->
+	<string id="30101">E-Mail-Adresse</string>
+	<string id="30102">Passwort</string>
+    <!-- Message strings -->
+    <string id="30300">Bitte konfigurieren sie ihren OTR Zugang im OTR Addon Setup</string>
+    <string id="30301">OTR login Fehlgeschlagen (%s)</string>
+    <string id="30302">Lade Aufnahmeliste</string>
+</strings>

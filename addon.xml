@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Document   : addon.xml
+    Package    : OTR Integration to XBMC
+    Author     : Frank Epperlein
+    Copyright  : 2012, Frank Epperlein, DE
+    License    : Gnu General Public License 2
+    Description: XBMC Addon for OTR integration
+-->
+<addon id="plugin.video.onlinetvrecorder_com" version="0.1" name="onlinetvrecorder.com" provider-name="Frank Epperlein">
+  <extension point="xbmc.python.pluginsource" library="otr.py">
+	<provides>video</provides>
+  </extension> 
+  <extension point="xbmc.addon.metadata">
+	<summary>onlinetvrecorder.com integration</summary>
+	<summary lang="de">onlinetvrecorder.com integration</summary>
+	<description>Will provide the ability to show onlinetvrecorder.com recordings within XBMC.</description>
+	<description lang="de">Ermoeglicht es Aufnahmen von onlinetvrecorder.com in XBMC anzuschauen.</description>
+	<platform>all</platform>
+  </extension> 
+</addon>
