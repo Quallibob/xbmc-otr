@@ -148,7 +148,7 @@ class creator:
                 thumbnailImage='%sA.jpg' % getImageUrl(element['FILENAME']) )
             infos= {}
             infos['size'] = long(fileinfo['size'])
-            infos['plotoutline'] = "%s GWP (%s %s, %s)" % (
+            infos['plot'] = "%s GWP (%s, %s, %s)\n" % (
                 fileinfo['cost'], 
                 fileinfo['type'], 
                 fileinfo['stream'],
@@ -158,7 +158,7 @@ class creator:
             if 'TITLE' in element: infos['title'] = element['TITLE']
             if 'STATION' in element: infos['studio'] = element['STATION']
             if 'BEGIN' in element: infos['date'] = element['BEGIN']
-            if 'TITLE2' in element: infos['plot'] = element['TITLE2']
+            if 'TITLE2' in element: infos['plot'] += "\n%s" % element['TITLE2']
             li.setInfo('video', infos)
             return li
 
