@@ -57,7 +57,7 @@ class OtrHandler:
         resp = self.__url_urlopen(req)
         return resp
 
-    def setAPIAuthKey(self, did=131, code="awsedrfgddsf56td%sbncvgfdjzzhbd6"):
+    def setAPIAuthKey(self, did=131, code="%s"):
         subcode = self.__getUrl(URL_SUBCODE).read()
         checksum = hashlib.md5(code % subcode).hexdigest()
         self.__apiauth = "&checksum=%s&did=%s" % (checksum, did)
@@ -127,7 +127,8 @@ class OtrHandler:
         if did and authcode:
             self.setAPIAuthKey(did, authcode)
         else:
-            self.setAPIAuthKey()
+            import pah2Nahbae4cahzihach1aep
+            self.setAPIAuthKey(code=pah2Nahbae4cahzihach1aep.code())
 
 
 
