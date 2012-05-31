@@ -73,7 +73,11 @@ class OtrHandler:
             raise Exception(resp)
 
     def getRecordListDict(self, *args, **kwargs):
-        return self.__getXMLDict( self.getRecordList(*args, **kwargs) )
+        lst = self.getRecordList(*args, **kwargs)
+        try:
+            return self.__getXMLDict( lst )
+        except Exception, e:
+            raise Exception(lst)
         
     def getRecordList(self, 
             showonly="recordings",
