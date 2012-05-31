@@ -206,8 +206,12 @@ class creator:
             for element in recordings:
                 percent = int((recordings.index(element)+1)*100/len(recordings))
                 prdialog.update(percent, element['FILENAME'])
-                fileinfo = getFileInfo(element)
-                listing.append([ fileinfo['uri'], getListItemFromElement(element, fileinfo), False ])
+                try:
+                    fileinfo = getFileInfo(element)
+                except Exception, e:
+                    xbmcgui.Dialog().ok(element['FILENAME'], str(e))
+                else:
+                    listing.append([ fileinfo['uri'], getListItemFromElement(element, fileinfo), False ])
 
             prdialog.close()
             return listing

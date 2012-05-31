@@ -112,7 +112,11 @@ class OtrHandler:
         return resp.read()
 
     def getFileInfoDict(self, *args, **kwargs):
-        return self.__getXMLDict( self.getFileInfo(*args, **kwargs) )
+        lst = self.getFileInfo(*args, **kwargs)
+        try:
+            return self.__getXMLDict( lst )
+        except Exception, e:
+            raise Exception(lst)
 
     def getFileInfo(self, fid, epgid, filename):
         requrl = "%s/downloader/api/request_file2.php?" % URL_OTR
@@ -124,7 +128,7 @@ class OtrHandler:
         return resp.read()
 
 
-    def __init__(self, did=False, authcode=False, sockettimeout=90):
+    def __init__(self, did=False, authcode=False, sockettimeout=60):
         if sockettimeout:
             socket.setdefaulttimeout(sockettimeout)
         self.__loadCookies()
@@ -145,7 +149,6 @@ if __name__ == '__main__':
     recordlist = otr.getRecordListDict()
     if 'FILE' in recordlist:
         for f in recordlist['FILE']:
-            print "########################################"
             pprint(f)
             fi = otr.getFileInfoDict(f['ID'], f['EPGID'], f['FILENAME'])
             pprint(fi)
