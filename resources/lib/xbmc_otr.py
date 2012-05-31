@@ -120,7 +120,7 @@ class creator:
         self._url = url
         self._xbmcaddon = xbmcaddon.Addon(id=url.netloc)
 
-    def _createList(self, otr):
+    def _createList(self, otr, scope):
         """
         Create the dynamic list of all content
         @param list dirContent - list of __PLAYLIST__ files in gpodder directory
@@ -194,18 +194,41 @@ class creator:
         prdialog.create(self._xbmcaddon.getLocalizedString(30302))
         prdialog.update(0)
 
-        recordings = otr.getRecordListDict(orderby="time_desc")
+        try:
+            recordings = otr.getRecordListDict(scope, orderby="time_desc")
+        except Exception, e:
+            prdialog.close()
+            xbmcgui.Dialog().ok(__TITLE__, str(e))
+            return []
+        else:
+            listing = []
+            recordings = getKey(recordings, 'FILE') or []
+            for element in recordings:
+                percent = int((recordings.index(element)+1)*100/len(recordings))
+                prdialog.update(percent, element['FILENAME'])
+                fileinfo = getFileInfo(element)
+                listing.append([ fileinfo['uri'], getListItemFromElement(element, fileinfo), False ])
+
+            prdialog.close()
+            return listing
+
+    def createDir(self, subs):
         listing = []
-        recordings = getKey(recordings, 'FILE') or []
-        for element in recordings:
-            percent = int((recordings.index(element)+1)*100/len(recordings))
-            prdialog.update(percent, element['FILENAME'])
-            fileinfo = getFileInfo(element)
-            listing.append([ fileinfo['uri'], getListItemFromElement(element, fileinfo) ])
-
-        prdialog.close()
-
+        for element in subs:
+            listing.append([
+                "%s://%s/%s/%s" % (
+                    self._url.scheme,
+                    self._url.netloc,
+                    self._url.path,
+                    element),
+                xbmcgui.ListItem( label=element ),
+                True] )
         return listing
+
+    def _createRecordingList(self, otr): return self._createList(otr, 'recordings')
+
+    def _createArchiveList(self, otr): return self._createList(otr, 'archive')
+        
 
     def get(self, otr):
         """
@@ -216,8 +239,18 @@ class creator:
                     list = c.get()
         """
 
+        path =  {
+                '': ['recordings', 'archive'],
+                'recordings': self._createRecordingList,
+                'archive': self._createArchiveList
+                }
+
         #get the list
-        return self._createList(otr)
+        sub = getKey(path, *self._url.path.strip('/').split('/'))
+        if isinstance(sub, list):
+            return self.createDir(sub)
+        else:
+            return sub(otr)
 
 class sender:
     """
@@ -241,4 +274,4 @@ class sender:
         @return void
         """
         for item in listing:
-            xbmcplugin.addDirectoryItem(int(self._url.fragment), item[0], item[1])
+            xbmcplugin.addDirectoryItem(int(self._url.fragment), item[0], item[1], item[2])
