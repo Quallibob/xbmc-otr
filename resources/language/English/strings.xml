@@ -13,4 +13,7 @@
     <string id="30300">Please set your OTR login in Addon Setup</string>
     <string id="30301">OTR Login Failed (%s)</string>
     <string id="30302">Loading recording list</string>
+    <string id="30303">Recordings</string>
+    <string id="30304">Archive</string>
+    <string id="30305">Delete</string>
 </strings>

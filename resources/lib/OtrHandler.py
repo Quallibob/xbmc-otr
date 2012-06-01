@@ -69,8 +69,15 @@ class OtrHandler:
         requrl += "&email=%s&pass=%s" % (email, password)
         resp = self.__session = self.__getUrl(requrl)
         resp = resp.read()
-        if len(resp):
+        if len(resp) and ' ' in resp:
             raise Exception(resp)
+
+    def deleteJob(self, email, epgid):
+        requrl = "%s/index.php?aktion=deleteJob" % URL_OTR
+        requrl += "&email=%s&epgid=%s" % ( base64.urlsafe_b64encode(email), base64.urlsafe_b64encode(epgid) )
+        resp = self.__session = self.__getUrl(requrl)
+        resp = resp.read()
+        return resp
 
     def getRecordListDict(self, *args, **kwargs):
         lst = self.getRecordList(*args, **kwargs)
@@ -124,6 +131,21 @@ class OtrHandler:
         requrl += "&id=%s" % base64.urlsafe_b64encode(fid)
         requrl += "&epgid=%s" % base64.urlsafe_b64encode(epgid)
         requrl += "&file=%s" % base64.urlsafe_b64encode(filename)
+        resp = self.__session = self.__getUrl(requrl)
+        return resp.read()
+
+
+    def getUserInfoDict(self, *args, **kwargs):
+        lst = self.getUserInfo(*args, **kwargs)
+        try:
+            return self.__getXMLDict( lst )
+        except Exception, e:
+            raise Exception(lst)
+
+    def getUserInfo(self, email):
+        requrl = "%s/downloader/api/userinfo.php?" % URL_OTR
+        requrl += self.__apiauth
+        requrl += "&email=%s" % base64.urlsafe_b64encode(email)
         resp = self.__session = self.__getUrl(requrl)
         return resp.read()
 
