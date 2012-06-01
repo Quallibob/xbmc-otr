@@ -60,6 +60,8 @@ def _(x, s):
         'recordings': 30303,
         'archive': 30304,
         'delete': 30305,
+        'play': 30306,
+        'refresh listing': 30307,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -184,14 +186,21 @@ class creator:
             if 'BEGIN' in element: infos['date'] = element['BEGIN']
             if 'TITLE2' in element: infos['plot'] += "\n%s" % element['TITLE2']
             li.setInfo('video', infos)
+
             li.addContextMenuItems(
-                [ ( _(self._xbmcaddon, 'delete'), 
+                [ 
+                  ( _(self._xbmcaddon, 'play'), 
+                    "PlayWith()" ),
+                  ( _(self._xbmcaddon, 'delete'), 
                     "XBMC.RunPlugin(%s://%s/%s?epgid=%s)" % (
                         self._url.scheme,
                         self._url.netloc,
                         'deletejob',
                         element['EPGID']), ),
-                ] )
+                  ( _(self._xbmcaddon, 'refresh listing'), 
+                    "Container.Refresh" ),
+                ], replaceItems=True )
+
             return li
 
 
@@ -242,7 +251,7 @@ class creator:
                 try:
                     fileinfo = getFileInfo(element)
                 except Exception, e:
-                    xbmcgui.Dialog().ok(element['FILENAME'], str(e))
+                    xbmc.executebuiltin('Notification("%s", "%s")' % (element['FILENAME'], str(e)))
                 else:
                     listing.append([ fileinfo['uri'], getListItemFromElement(element, fileinfo), False ])
 
