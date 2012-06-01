@@ -61,10 +61,9 @@ def _(x, s):
         'archive': 30304,
         'delete': 30305,
         }
-    if s in translations and translations[s]:
-        return x.getLocalizedString(translations[s])
-    else:
-        return s
+    if s in translations:
+        return x.getLocalizedString(translations[s]) or s
+    return s
 
 
 #define classes
