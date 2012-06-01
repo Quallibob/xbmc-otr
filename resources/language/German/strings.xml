@@ -13,4 +13,7 @@
     <string id="30300">Bitte konfigurieren sie ihren OTR Zugang im OTR Addon Setup</string>
     <string id="30301">OTR login Fehlgeschlagen (%s)</string>
     <string id="30302">Lade Aufnahmeliste</string>
+    <string id="30303">Aufnahmen</string>
+    <string id="30304">Archiv</string>
+    <string id="30305">Löschen</string>
 </strings>

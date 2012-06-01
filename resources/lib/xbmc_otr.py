@@ -18,7 +18,11 @@ import xbmcgui
 import OtrHandler
 import logging
 import urllib
-
+try:
+    from cgi import parse_qs
+except ImportError:
+    from urlparse import parse_qs
+    
 logger = logging.getLogger()
 
 __TITLE__ = 'onlinetvrecorder.com'
@@ -47,6 +51,20 @@ def getSizeStr(size):
     elif int(size) > 1024: return "%.3f KB" % float(int(size) / 1024.0)
     else: return "%d Bytes" % int(size)
 
+
+def _(x, s):
+    translations = {
+        'missing login credentials': 30300,
+        'login failed (%s)': 30301,
+        'loading recording list': 30302,
+        'recordings': 30303,
+        'archive': 30304,
+        'delete': 30305,
+        }
+    if s in translations and translations[s]:
+        return x.getLocalizedString(translations[s])
+    else:
+        return s
 
 
 #define classes
@@ -83,20 +101,27 @@ class housekeeper:
         if not len(username) or not len(password):
             xbmcgui.Dialog().ok(
                __TITLE__,
-               self._xbmcaddon.getLocalizedString(30300) )
+               _(self._xbmcaddon, 'missing login credentials') )
             raise Exception("missing login credentials")
 
 
         self._otr = OtrHandler.OtrHandler()
         try:
-            self._otr.login(username, password)
-        except Exception, e:
-            xbmcgui.Dialog().ok(
-                __TITLE__,
-                self._xbmcaddon.getLocalizedString(30301) % str(e) )
-            raise Exception(e)
-        else:
-            print("otr login successful")
+            #self._otr.getUserInfoDict(username)
+            print(self._otr.getUserInfoDict(username))
+            forced_errrrrrrrror
+        except Exception, f:
+            try:
+                self._otr.login(username, password)
+                pass
+            except Exception, e:
+                xbmcgui.Dialog().ok(
+                    __TITLE__,
+                    _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
+                raise Exception(e)
+            else:
+                print("otr login successful")
+                print(self._otr.getUserInfoDict(username))
 
     
     def end(self):
@@ -160,6 +185,14 @@ class creator:
             if 'BEGIN' in element: infos['date'] = element['BEGIN']
             if 'TITLE2' in element: infos['plot'] += "\n%s" % element['TITLE2']
             li.setInfo('video', infos)
+            li.addContextMenuItems(
+                [ ( _(self._xbmcaddon, 'delete'), 
+                    "XBMC.RunPlugin(%s://%s/%s?epgid=%s)" % (
+                        self._url.scheme,
+                        self._url.netloc,
+                        'deletejob',
+                        element['EPGID']), ),
+                ] )
             return li
 
 
@@ -191,7 +224,7 @@ class creator:
             return {'uri':uri, 'type': stype, 'cost': gwp, 'size':size, 'stream':stream}
 
         prdialog = xbmcgui.DialogProgress()
-        prdialog.create(self._xbmcaddon.getLocalizedString(30302))
+        prdialog.create(_(self._xbmcaddon, 'loading recording list'))
         prdialog.update(0)
 
         try:
@@ -203,6 +236,7 @@ class creator:
         else:
             listing = []
             recordings = getKey(recordings, 'FILE') or []
+            if not isinstance(recordings, list): recordings = [recordings]
             for element in recordings:
                 percent = int((recordings.index(element)+1)*100/len(recordings))
                 prdialog.update(percent, element['FILENAME'])
@@ -219,13 +253,13 @@ class creator:
     def createDir(self, subs):
         listing = []
         for element in subs:
-            listing.append([
+            listing.append( [
                 "%s://%s/%s/%s" % (
                     self._url.scheme,
                     self._url.netloc,
                     self._url.path,
                     element),
-                xbmcgui.ListItem( label=element ),
+                xbmcgui.ListItem( label=_(self._xbmcaddon, element) ),
                 True] )
         return listing
 
@@ -233,6 +267,11 @@ class creator:
 
     def _createArchiveList(self, otr): return self._createList(otr, 'archive')
         
+
+    def _deleteJob(self, otr):
+        print(otr.deleteJob( self._xbmcaddon.getSetting('otrUsername'), parse_qs(self._url.query)['epgid'].pop() ))
+        xbmc.executebuiltin("Container.Refresh")
+        return []
 
     def get(self, otr):
         """
@@ -246,7 +285,8 @@ class creator:
         path =  {
                 '': ['recordings', 'archive'],
                 'recordings': self._createRecordingList,
-                'archive': self._createArchiveList
+                'archive': self._createArchiveList,
+                'deletejob': self._deleteJob,
                 }
 
         #get the list
