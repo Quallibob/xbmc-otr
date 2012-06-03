@@ -62,6 +62,9 @@ def _(x, s):
         'delete': 30305,
         'play': 30306,
         'refresh listing': 30307,
+        'userinfo': 30308,
+        'status: %s (until %s)': 30309,
+        'decodings left: %s, gwp left: %s': 30310,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -199,6 +202,11 @@ class creator:
                         element['EPGID']), ),
                   ( _(self._xbmcaddon, 'refresh listing'), 
                     "Container.Refresh" ),
+                  ( _(self._xbmcaddon, 'userinfo'), 
+                    "XBMC.RunPlugin(%s://%s/%s)" % (
+                        self._url.scheme,
+                        self._url.netloc,
+                        'userinfo' ),)
                 ], replaceItems=True )
 
             return li
@@ -281,6 +289,18 @@ class creator:
         xbmc.executebuiltin("Container.Refresh")
         return []
 
+    def _showUserinfo(self, otr):
+        info = otr.getUserInfoDict( self._xbmcaddon.getSetting('otrUsername') )
+        line1 = "%s" % (info['EMAIL'])
+        line2 = _(self._xbmcaddon, "status: %s (until %s)") % ( 
+            info['STATUS'],
+            info['UNTILNICE'])
+        line3 = _(self._xbmcaddon, "decodings left: %s, gwp left: %s") % ( 
+            info['DECODINGS_LEFT'],
+            info['GWP'])
+        xbmcgui.Dialog().ok( __TITLE__, line1, line2, line3)
+        return []
+
     def get(self, otr):
         """
         Refresh and retrieve the current list for display
@@ -295,6 +315,7 @@ class creator:
                 'recordings': self._createRecordingList,
                 'archive': self._createArchiveList,
                 'deletejob': self._deleteJob,
+                'userinfo': self._showUserinfo,
                 }
 
         #get the list

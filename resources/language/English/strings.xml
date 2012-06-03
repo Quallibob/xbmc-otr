@@ -18,4 +18,7 @@
     <string id="30305">Delete</string>
     <string id="30306">Play</string>
     <string id="30307">Refresh Listing</string>
+    <string id="30308">Userinfo</string>
+    <string id="30309">Status: %s (until %s)</string>
+    <string id="30310">Decodings left: %s, GWP left: %s</string>
 </strings>
