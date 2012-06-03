@@ -269,13 +269,24 @@ class creator:
     def createDir(self, subs):
         listing = []
         for element in subs:
+            li = xbmcgui.ListItem( label=_(self._xbmcaddon, element) )
+            li.addContextMenuItems(
+                [ 
+                  ( _(self._xbmcaddon, 'refresh listing'), 
+                    "Container.Refresh" ),
+                  ( _(self._xbmcaddon, 'userinfo'), 
+                    "XBMC.RunPlugin(%s://%s/%s)" % (
+                        self._url.scheme,
+                        self._url.netloc,
+                        'userinfo' ),)
+                ], replaceItems=True )
             listing.append( [
                 "%s://%s/%s/%s" % (
                     self._url.scheme,
                     self._url.netloc,
                     self._url.path,
                     element),
-                xbmcgui.ListItem( label=_(self._xbmcaddon, element) ),
+                li,
                 True] )
         return listing
 
