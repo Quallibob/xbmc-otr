@@ -8,6 +8,7 @@
     License    : Gnu General Public License 2
     Description: Worker class library
 """
+
 #make xbmc and system modules available
 import os
 import sys
@@ -54,6 +55,14 @@ def getSizeStr(size):
 
 
 def _(x, s):
+    """
+    Versucht einen nicht-lokalisierten String zu uebersetzen.
+
+    @param x: addon das befragt werden soll
+    @type  x: xbmcaddon.Addon Instance
+    @param s: unlokalisierter String
+    @type  s: string
+    """
     translations = {
         'missing login credentials': 30300,
         'login failed (%s)': 30301,
@@ -82,7 +91,6 @@ class housekeeper:
     _url = None
     _otr = None
 
-
     def __init__(self, url):
         """
         constructor
@@ -92,6 +100,9 @@ class housekeeper:
         self._xbmcaddon = xbmcaddon.Addon(id=url.netloc)
 
     def getOTR(self):
+        """
+        Liefert die geladene OTR instanz zurueck.
+        """
         if self._otr:
             return self._otr
         else:
@@ -102,6 +113,7 @@ class housekeeper:
         Run the startup
         """
 
+        # login infos auslesen
         username = self._xbmcaddon.getSetting('otrUsername')
         password = self._xbmcaddon.getSetting('otrPassword')
         if not len(username) or not len(password):
@@ -111,7 +123,9 @@ class housekeeper:
             raise Exception("missing login credentials")
 
 
+        # login
         try:
+            # hanlder instanz laden
             self._otr = OtrHandler.OtrHandler()
         except Exception, e:
             xbmcgui.Dialog().ok(
@@ -120,21 +134,15 @@ class housekeeper:
             sys.exit(0)
         else:
             try:
-                #self._otr.getUserInfoDict(username)
-                print(self._otr.getUserInfoDict(username))
-                forced_errrrrrrrror
-            except Exception, f:
-                try:
-                    self._otr.login(username, password)
-                    pass
-                except Exception, e:
-                    xbmcgui.Dialog().ok(
-                        __TITLE__,
-                        _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
-                    sys.exit(0)
-                    #raise Exception(e)
-                else:
-                    print("otr login successful")
+                # eigentlicher login
+                self._otr.login(username, password)
+            except Exception, e:
+                xbmcgui.Dialog().ok(
+                    __TITLE__,
+                    _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
+                sys.exit(0)
+            else:
+                print("otr login successful")
 
     
     def end(self):
@@ -168,8 +176,19 @@ class creator:
         """
 
         def getListItemFromElement(element, fileinfo):
+            """
+            generiert xbmcgui.ListItem fuer ein element
+
+            @param element: elementDict vom OtrHandler
+            @type  element: dict
+            @param fileinfo: fileinfoDict vom OtrHandler
+            @type  fileinfo: dict
+            """
 
             def getImageUrl(filename):
+                """
+                liefert generierte thumbnail url zurueck
+                """
                 url = __THUMBURL__
                 url += filename.split('TVOON_DE')[0]
                 url += 'TVOON_DE'
@@ -178,12 +197,17 @@ class creator:
 
             label = element['TITLE']
             if 'BEGIN' in element:
+                # zeitangabe vorhanden
                 label += " (%s)" % element['BEGIN']
+
+            # listelement erzeugen
             li = xbmcgui.ListItem(
                 label=label,
                 label2=element['FILENAME'],
                 iconImage='%s1.jpg' % getImageUrl(element['FILENAME']),
                 thumbnailImage='%sA.jpg' % getImageUrl(element['FILENAME']) )
+
+            # infos aggregieren
             infos= {}
             infos['size'] = long(fileinfo['size'])
             infos['plot'] = "%s GWP (%s, %s, %s)\n" % (
@@ -199,6 +223,7 @@ class creator:
             if 'TITLE2' in element: infos['plot'] += "\n%s" % element['TITLE2']
             li.setInfo('video', infos)
 
+            # contextmenue erzeuegen
             li.addContextMenuItems(
                 [ 
                   ( _(self._xbmcaddon, 'play'), 
@@ -222,6 +247,8 @@ class creator:
 
 
         def getFileInfo(element):
+
+            # streamauswahl
             streams = ['MP4_Stream', 'MP4']
             if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
                 streams.insert(0, 'MP4_geschnitten')
@@ -235,6 +262,8 @@ class creator:
                 streams.insert(0, 'HDMP4_Stream')
                 if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
                     streams.insert(0, 'HDMP4_geschnitten')
+
+            # fileinfoDict abfragen
             elementinfo = otr.getFileInfoDict(element['ID'], element['EPGID'], element['FILENAME'])
             for stream in streams: 
                 if getKey(elementinfo, stream): break
@@ -246,13 +275,17 @@ class creator:
                 size = getKey(elementinfo, stream, 'SIZE')
                 uri  = getKey(elementinfo, stream, stype)
                 gwp  = getKey(elementinfo, stream, 'GWPCOSTS', stype)
+
+            # aggergieren und ausliefern
             return {'uri':uri, 'type': stype, 'cost': gwp, 'size':size, 'stream':stream}
 
+        # progressdialog erzeuegen
         prdialog = xbmcgui.DialogProgress()
         prdialog.create(_(self._xbmcaddon, 'loading recording list'))
         prdialog.update(0)
 
         try:
+            # eigentliche Liste abfragen
             recordings = otr.getRecordListDict(scope, orderby="time_desc")
         except Exception, e:
             prdialog.close()
@@ -263,21 +296,35 @@ class creator:
         else:
             listing = []
             recordings = getKey(recordings, 'FILE') or []
-            if not isinstance(recordings, list): recordings = [recordings]
+            if not isinstance(recordings, list): 
+                # liste hat nur einen eintrag
+                recordings = [recordings]
+
             for element in recordings:
+
+                # progressdialog updaten
                 percent = int((recordings.index(element)+1)*100/len(recordings))
                 prdialog.update(percent, element['FILENAME'])
+
                 try:
+                    # fileinfoDict abfragen
                     fileinfo = getFileInfo(element)
                 except Exception, e:
                     xbmc.executebuiltin('Notification("%s", "%s")' % (element['FILENAME'], str(e)))
                 else:
                     listing.append([ fileinfo['uri'], getListItemFromElement(element, fileinfo), False ])
 
+            # progressdialog abschliessen
             prdialog.close()
             return listing
 
     def createDir(self, subs):
+        """
+        dir listing fuer uebersichten erzeugen
+
+        @param subs: listenelemente
+        @type  subs: list
+        """
         listing = []
         for element in subs:
             li = xbmcgui.ListItem( label=_(self._xbmcaddon, element) )
