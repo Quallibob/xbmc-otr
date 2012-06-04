@@ -150,7 +150,7 @@ class OtrHandler:
         return resp.read()
 
 
-    def __init__(self, did=False, authcode=False, sockettimeout=60):
+    def __init__(self, did=False, authcode=False, sockettimeout=90):
         if sockettimeout:
             socket.setdefaulttimeout(sockettimeout)
         self.__loadCookies()

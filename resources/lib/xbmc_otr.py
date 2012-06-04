@@ -10,6 +10,7 @@
 """
 #make xbmc and system modules available
 import os
+import sys
 import subprocess
 import xbmc
 import xbmcplugin
@@ -65,6 +66,7 @@ def _(x, s):
         'userinfo': 30308,
         'status: %s (until %s)': 30309,
         'decodings left: %s, gwp left: %s': 30310,
+        'loading recording list failed (%s)': 30311,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -109,23 +111,30 @@ class housekeeper:
             raise Exception("missing login credentials")
 
 
-        self._otr = OtrHandler.OtrHandler()
         try:
-            #self._otr.getUserInfoDict(username)
-            print(self._otr.getUserInfoDict(username))
-            forced_errrrrrrrror
-        except Exception, f:
+            self._otr = OtrHandler.OtrHandler()
+        except Exception, e:
+            xbmcgui.Dialog().ok(
+                __TITLE__,
+                _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
+            sys.exit(0)
+        else:
             try:
-                self._otr.login(username, password)
-                pass
-            except Exception, e:
-                xbmcgui.Dialog().ok(
-                    __TITLE__,
-                    _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
-                raise Exception(e)
-            else:
-                print("otr login successful")
+                #self._otr.getUserInfoDict(username)
                 print(self._otr.getUserInfoDict(username))
+                forced_errrrrrrrror
+            except Exception, f:
+                try:
+                    self._otr.login(username, password)
+                    pass
+                except Exception, e:
+                    xbmcgui.Dialog().ok(
+                        __TITLE__,
+                        _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
+                    sys.exit(0)
+                    #raise Exception(e)
+                else:
+                    print("otr login successful")
 
     
     def end(self):
@@ -247,7 +256,9 @@ class creator:
             recordings = otr.getRecordListDict(scope, orderby="time_desc")
         except Exception, e:
             prdialog.close()
-            xbmcgui.Dialog().ok(__TITLE__, str(e))
+            xbmcgui.Dialog().ok(
+                    __TITLE__, 
+                    _(self._xbmcaddon, 'loading recording list failed (%s)' % str(e)) )
             return []
         else:
             listing = []
