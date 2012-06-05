@@ -1,6 +1,15 @@
 #!/usr/bin/python
 # vim: tabstop=4 shiftwidth=4 smarttab expandtab softtabstop=4 autoindent
 
+"""
+    Document   : OtrHandler.py
+    Package    : OTR Integration to XBMC
+    Author     : Frank Epperlein
+    Copyright  : 2012, Frank Epperlein, DE
+    License    : Gnu General Public License 2
+    Description: OTR access library
+"""
+
 import urllib2
 import hashlib
 import os
@@ -15,6 +24,9 @@ URL_SUBCODE="%s/downloader/api/getcode.php" % URL_OTR
 
 
 class OtrHandler:
+    """
+    OTR Representation
+    """
     
     __session = False
     __apiauth = ""
@@ -23,6 +35,9 @@ class OtrHandler:
     __url_urlopen  = None
 
     def __loadCookies(self):
+        """
+        get cookie handler
+        """
         try:
             import cookielib
         except ImportError:
@@ -49,21 +64,49 @@ class OtrHandler:
             self.__url_urlopen = urlopen
 
     def __getXMLDict(self, xml):
+        """
+        parse xml into dict
+
+        @param xml: xml data
+        @type  xml: string
+        """
         tree = ElementTree.XML(xml)
         return XmlDict.XmlDict(tree)
 
     def __getUrl(self, url):
+        """
+        query url
+
+        @param url: url to request
+        @type  url: string
+        """
         req = self.__url_request(url)
         resp = self.__url_urlopen(req)
         return resp
 
     def setAPIAuthKey(self, did=131, code="%s"):
+        """
+        set internal api access code
+
+        @param did: programm code
+        @type  did: int
+        @param code: access code
+        @type  code: string
+        """
         subcode = self.__getUrl(URL_SUBCODE).read()
         checksum = hashlib.md5(code % subcode).hexdigest()
         self.__apiauth = "&checksum=%s&did=%s" % (checksum, did)
 
 
     def login(self, email, password):
+        """
+        login to otr
+
+        @param email: email address or username
+        @type  email: string
+        @param password: user password
+        @type  password: string
+        """
         requrl = "%s/downloader/api/login.php?" % URL_OTR
         requrl += self.__apiauth
         requrl += "&email=%s&pass=%s" % (email, password)
@@ -73,6 +116,14 @@ class OtrHandler:
             raise Exception(resp)
 
     def deleteJob(self, email, epgid):
+        """
+        delete recording
+
+        @param email: email address or username
+        @type  email: string
+        @param epgid: epgid
+        @type  epgid: string
+        """
         requrl = "%s/index.php?aktion=deleteJob" % URL_OTR
         requrl += "&email=%s&epgid=%s" % ( base64.urlsafe_b64encode(email), base64.urlsafe_b64encode(epgid) )
         resp = self.__session = self.__getUrl(requrl)
@@ -80,6 +131,9 @@ class OtrHandler:
         return resp
 
     def getRecordListDict(self, *args, **kwargs):
+        """
+        wrapper for getRecordList
+        """
         lst = self.getRecordList(*args, **kwargs)
         try:
             return self.__getXMLDict( lst )
@@ -100,6 +154,36 @@ class OtrHandler:
             expected=False, 
             unknownstation=False, 
             removed=False):
+        """
+        get recording list
+
+        @param showonly: list type
+        @type  showonly: string
+        @param orderby: ordering method
+        @type  orderby: string
+        @param scheduled: show scheduled
+        @type  scheduled: boolean
+        @param recording: show recording
+        @type  recording: boolean
+        @param ready: show ready
+        @type  ready: boolean
+        @param downloaded: show downloaded
+        @type  downloaded: boolean
+        @param decoded: show decoded
+        @type  decoded: boolean
+        @param paid: show paid
+        @type  paid: boolean
+        @param bad: show bad
+        @type  bad: boolean
+        @param pending: show pending
+        @type  pending: boolean
+        @param expected: show expected
+        @type  expected: boolean
+        @param unknownstation: show unknownstation
+        @type  unknownstation: boolean
+        @param removed: show removed
+        @type  removed: boolean
+        """
         requrl = "%s/downloader/api/request_list2.php?" % URL_OTR
         requrl += self.__apiauth
         requrl += "&showonly=%s" % showonly
@@ -119,6 +203,9 @@ class OtrHandler:
         return resp.read()
 
     def getFileInfoDict(self, *args, **kwargs):
+        """
+        wrapper for getFileInfo
+        """
         lst = self.getFileInfo(*args, **kwargs)
         try:
             return self.__getXMLDict( lst )
@@ -126,6 +213,16 @@ class OtrHandler:
             raise Exception(lst)
 
     def getFileInfo(self, fid, epgid, filename):
+        """
+        get file details
+
+        @param fid: file id
+        @type  fid: string
+        @param epgid: epgid
+        @type  epgid: string
+        @param filename: filename
+        @type  filename: string
+        """
         requrl = "%s/downloader/api/request_file2.php?" % URL_OTR
         requrl += self.__apiauth
         requrl += "&id=%s" % base64.urlsafe_b64encode(fid)
@@ -136,6 +233,9 @@ class OtrHandler:
 
 
     def getUserInfoDict(self, *args, **kwargs):
+        """
+        wrapper for getUserInfo
+        """
         lst = self.getUserInfo(*args, **kwargs)
         try:
             return self.__getXMLDict( lst )
@@ -143,6 +243,12 @@ class OtrHandler:
             raise Exception(lst)
 
     def getUserInfo(self, email):
+        """
+        get user info
+
+        @param email: email address or username
+        @type  email: string
+        """
         requrl = "%s/downloader/api/userinfo.php?" % URL_OTR
         requrl += self.__apiauth
         requrl += "&email=%s" % base64.urlsafe_b64encode(email)
@@ -151,6 +257,16 @@ class OtrHandler:
 
 
     def __init__(self, did=False, authcode=False, sockettimeout=90):
+        """
+        constructor
+
+        @param did: did
+        @type  did: int
+        @param authcode: authcode
+        @type  authcode: string
+        @param sockettimeout: timeout for requests
+        @type  sockettimeout: int
+        """
         if sockettimeout:
             socket.setdefaulttimeout(sockettimeout)
         self.__loadCookies()
