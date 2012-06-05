@@ -1,5 +1,14 @@
 from xml.etree import ElementTree
 
+"""
+    Document   : XmlDict.py
+    Package    : OTR Integration to XBMC
+    Author     : Frank Epperlein
+    Copyright  : 2005, Duncan McGreggor
+    License    : PSF
+    Description: XML-as-Dict Module
+"""
+
 class XmlListConfig(list):
     def __init__(self, aList):
         for element in aList:

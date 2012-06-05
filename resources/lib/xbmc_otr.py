@@ -9,7 +9,6 @@
     Description: Worker class library
 """
 
-#make xbmc and system modules available
 import os
 import sys
 import subprocess
@@ -20,12 +19,13 @@ import xbmcgui
 import OtrHandler
 import logging
 import urllib
+
 try:
     from cgi import parse_qs
 except ImportError:
     from urlparse import parse_qs
     
-logger = logging.getLogger()
+
 
 __TITLE__ = 'onlinetvrecorder.com'
 __THUMBURL__ = 'http://thumbs.onlinetvrecorder.com/'
@@ -348,17 +348,43 @@ class creator:
                 True] )
         return listing
 
-    def _createRecordingList(self, otr): return self._createList(otr, 'recordings')
+    def _createRecordingList(self, otr): 
+        """
+        wrapper um createList fuer recordings aufzurufen
 
-    def _createArchiveList(self, otr): return self._createList(otr, 'archive')
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
+        """
+        return self._createList(otr, 'recordings')
+
+    def _createArchiveList(self, otr): 
+        """
+        wrapper um createList fuer archive aufzurufen
+
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
+        """
+        return self._createList(otr, 'archive')
         
 
     def _deleteJob(self, otr):
+        """
+        aufnahme loeschen
+
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
+        """
         print(otr.deleteJob( self._xbmcaddon.getSetting('otrUsername'), parse_qs(self._url.query)['epgid'].pop() ))
         xbmc.executebuiltin("Container.Refresh")
         return []
 
     def _showUserinfo(self, otr):
+        """
+        userinfo anzeigen
+
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
+        """
         info = otr.getUserInfoDict( self._xbmcaddon.getSetting('otrUsername') )
         line1 = "%s" % (info['EMAIL'])
         line2 = _(self._xbmcaddon, "status: %s (until %s)") % ( 
@@ -372,13 +398,15 @@ class creator:
 
     def get(self, otr):
         """
-        Refresh and retrieve the current list for display
+        pfad aufloesen und auflistung zurueckliefern
+
         @access public
         @returns list
         @usage      c=example2.creator()
                     list = c.get()
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
         """
-
         path =  {
                 '': ['recordings', 'archive'],
                 'recordings': self._createRecordingList,
