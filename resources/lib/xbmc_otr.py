@@ -213,7 +213,7 @@ class creator:
             infos['plot'] = "%s GWP (%s, %s, %s)\n" % (
                 fileinfo['cost'], 
                 fileinfo['type'].replace('_', ' '), 
-                fileinfo['stream'],
+                fileinfo['stream'].replace('_', ' '),
                 getSizeStr(infos['size']*1024) )
             if 'DURATION' in element: infos['duration'] = element['DURATION'].split()[0]
             if 'DOWNLOADCOUNT' in element: infos['playcount'] = int(element['DOWNLOADCOUNT'])
@@ -443,5 +443,6 @@ class sender:
         @param list listing - the list of items to display
         @return void
         """
+        xbmcplugin.setContent(int(self._url.fragment), 'tvshows')
         for item in listing:
             xbmcplugin.addDirectoryItem(int(self._url.fragment), item[0], item[1], item[2])
