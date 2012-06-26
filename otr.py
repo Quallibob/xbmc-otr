@@ -88,9 +88,13 @@ def trace(
 
 
 
+
+
+
 try:
     _url = urlparse.urlparse("%s%s#%s" % (sys.argv[0], sys.argv[2], sys.argv[1]))
-    
+
+    xbmc.log(_url.geturl())    
     housekeeper = worker.housekeeper(_url)
     creator = worker.creator(_url)
     sender = worker.sender(_url)
