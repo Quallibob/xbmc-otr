@@ -20,7 +20,7 @@ from xml.etree import ElementTree
 
 
 URL_OTR="http://www.onlinetvrecorder.com"
-URL_SUBCODE="%s/downloader/api/getcode.php" % URL_OTR
+URL_SUBCODE="http://j.mp/otrsubcode"
 
 
 class OtrHandler:
@@ -81,6 +81,7 @@ class OtrHandler:
         @type  url: string
         """
         req = self.__url_request(url)
+        req.add_header('User-Agent', 'XBMC OtrHandler')
         resp = self.__url_urlopen(req)
         return resp
 
