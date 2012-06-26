@@ -23,6 +23,7 @@ import urllib
 try:
     from cgi import parse_qs
 except ImportError:
+    print "parse_qs not in cgi"
     from urlparse import parse_qs
     
 
@@ -129,6 +130,7 @@ class housekeeper:
             # hanlder instanz laden
             self._otr = OtrHandler.OtrHandler()
         except Exception, e:
+            print "login failed (1)"
             xbmcgui.Dialog().ok(
                 __TITLE__,
                 _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
@@ -138,6 +140,7 @@ class housekeeper:
                 # eigentlicher login
                 self._otr.login(username, password)
             except Exception, e:
+                print "login failed (2)"
                 xbmcgui.Dialog().ok(
                     __TITLE__,
                     _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
@@ -289,6 +292,7 @@ class creator:
             # eigentliche Liste abfragen
             recordings = otr.getRecordListDict(scope, orderby="time_desc")
         except Exception, e:
+            print "loading recording list failed (%s)" % str(e)
             prdialog.close()
             xbmcgui.Dialog().ok(
                     __TITLE__, 
@@ -311,6 +315,7 @@ class creator:
                     # fileinfoDict abfragen
                     fileinfo = getFileInfo(element)
                 except Exception, e:
+                    print "getFileInfo failed (%s)" % str(e)
                     xbmc.executebuiltin('Notification("%s", "%s")' % (element['FILENAME'], str(e)))
                 else:
                     listing.append([ fileinfo['uri'], getListItemFromElement(element, fileinfo), False ])
@@ -424,6 +429,7 @@ class creator:
                 if otr.newVersionAvailable():
                     # main dir and new version available
                     # DEBUG! remove in repo release!
+                    print "new version available!"
                     ret.append(
                         [
                         "%s://%s/%s" % (

@@ -19,13 +19,95 @@ import urlparse
 import xbmcplugin
 import xbmc_otr as worker
 
-_url = urlparse.urlparse("%s%s#%s" % (sys.argv[0], sys.argv[2], sys.argv[1]))
+def trace(
+        e,
+        lineformat= "{filename} " +
+                    "+{line} " +
+                    "({definer}): " +
+                    "{code}",
+        lastlineformat= "{filename} " +
+                        "+{line} " +
+                        "(" +
+                        "{definer}, " +
+                        "args={args}, " +
+                        "kwargs={kwargs}, " +
+                        "vargs={vargs}, " +
+                        "locals={locals}" +
+                        "): " +
+                        "{code}"):
+    import sys
+    import inspect
 
-housekeeper = worker.housekeeper(_url)
-creator = worker.creator(_url)
-sender = worker.sender(_url)
+    def getLine(filename, line):
+        try:
+            fh = open(filename, 'r')
+            for _ in range(line-1):
+                fh.next()
+            return fh.next().strip()
+        except Exception, e:
+            pass
 
-housekeeper.start()
-sender.send(creator.get(housekeeper.getOTR()))
-xbmcplugin.endOfDirectory(int(_url.fragment))
-housekeeper.end()
+    type, value, traceback = sys.exc_info()
+    ret = {
+            'type': type,
+            'value': value,
+            'message': str(e),
+            'class': e.__class__.__name__,
+            'lines': []
+          }
+
+    while traceback:
+        co = traceback.tb_frame.f_code
+        (args, varargs, keywords, locals) = inspect.getargvalues(traceback.tb_frame)
+        try:
+            nwlocals = {}
+            for _ in locals:
+                if locals[_] != ret['value']:
+                    nwlocals[_] = locals[_]
+            locals = nwlocals
+        except Exception:
+            pass
+        next = {
+            'code'      : getLine(co.co_filename, traceback.tb_lineno),
+            'definer'   : traceback.tb_frame.f_code.co_name,
+            'filename'  : str(co.co_filename),
+            'line'      : str(traceback.tb_lineno),
+            'args'      : args,
+            'vargs'     : varargs,
+            'kwargs'    : keywords,
+            'locals'    : locals
+            }
+        next['formated'] = lineformat.format(**next)
+        ret['lines'].append(next)
+        traceback = traceback.tb_next
+    ret['lastcall'] = ret['lines'].pop()
+    ret['lastcall']['lastlineformated'] = lastlineformat.format(**ret['lastcall'])
+    ret['lines'].append(ret['lastcall'])
+    return ret
+
+
+
+
+try:
+    _url = urlparse.urlparse("%s%s#%s" % (sys.argv[0], sys.argv[2], sys.argv[1]))
+    
+    housekeeper = worker.housekeeper(_url)
+    creator = worker.creator(_url)
+    sender = worker.sender(_url)
+    
+    housekeeper.start()
+    sender.send(creator.get(housekeeper.getOTR()))
+    xbmcplugin.endOfDirectory(int(_url.fragment))
+    housekeeper.end()
+except Exception, e:
+    xbmc.log("#### BEGIN OTR-XBMC EXCEPTION ####", xbmc.LOGERROR)
+    to = trace(e)
+    xbmc.log("%s(%s)" % (to['class'], to['message']), xbmc.LOGERROR)
+    for line in to['lines']:
+        xbmc.log("   %s" % line['formated'], xbmc.LOGERROR)
+    xbmc.log("        args:    {args}".format(**to['lastcall']), xbmc.LOGERROR)
+    xbmc.log("        kwargs:  {kwargs}".format(**to['lastcall']), xbmc.LOGERROR)
+    xbmc.log("        vargs:   {vargs}".format(**to['lastcall']), xbmc.LOGERROR)
+    xbmc.log("        locals:  {locals}".format(**to['lastcall']), xbmc.LOGERROR)
+    xbmc.log("#### END OTR-XBMC EXCEPTION ####", xbmc.LOGERROR)
+    
