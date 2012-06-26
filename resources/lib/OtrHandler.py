@@ -21,7 +21,8 @@ from xml.etree import ElementTree
 
 URL_OTR="http://www.onlinetvrecorder.com"
 URL_SUBCODE="http://j.mp/otrsubcode"
-
+VERSION="0.2"
+VERSION_CHECK="http://shellshark.indefero.net/p/xbmc-otr/source/file/master/version"
 
 class OtrHandler:
     """
@@ -84,6 +85,20 @@ class OtrHandler:
         req.add_header('User-Agent', 'XBMC OtrHandler')
         resp = self.__url_urlopen(req)
         return resp
+
+    def newVersionAvailable(self):
+        """
+        check for new version
+        """
+        try:
+            master = self.__getUrl(VERSION_CHECK).read()
+            if float(master) > float(VERSION):
+                return True
+        except Exception, e:
+            pass
+        return False
+
+
 
     def setAPIAuthKey(self, did=131, code="%s"):
         """

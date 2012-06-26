@@ -76,6 +76,7 @@ def _(x, s):
         'status: %s (until %s)': 30309,
         'decodings left: %s, gwp left: %s': 30310,
         'loading recording list failed (%s)': 30311,
+        'new version available': 30312,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -418,7 +419,21 @@ class creator:
         #get the list
         sub = getKey(path, *self._url.path.strip('/').split('/'))
         if isinstance(sub, list):
-            return self.createDir(sub)
+            ret = self.createDir(sub)
+            if self._url.path == '/':
+                if otr.newVersionAvailable():
+                    # main dir and new version available
+                    # DEBUG! remove in repo release!
+                    ret.append(
+                        [
+                        "%s://%s/%s" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            self._url.path),
+                        xbmcgui.ListItem( label=_(self._xbmcaddon, 'new version available') ),
+                        False
+                        ])
+            return ret
         else:
             return sub(otr)
 
