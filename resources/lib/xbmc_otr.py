@@ -272,7 +272,8 @@ class creator:
             for stream in streams: 
                 if getKey(elementinfo, stream): break
             stype = ( (getKey(elementinfo, stream, 'FREE') and 'FREE') or
-                      (getKey(elementinfo, stream, 'PRIO') and 'PRIO') or False ) 
+                      (getKey(elementinfo, stream, 'PRIO') and 'PRIO') or False )
+
             if not stype: 
                 return False
             else:
