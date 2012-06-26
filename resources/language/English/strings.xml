@@ -22,4 +22,5 @@
     <string id="30309">Status: %s (until %s)</string>
     <string id="30310">Decodings left: %s, GWP left: %s</string>
     <string id="30311">Loading recording list failed (%s)</string>
+    <string id="30312">New Addon-Version Available! Update at http://j.mp/xbmc-otr ...</string>
 </strings>
