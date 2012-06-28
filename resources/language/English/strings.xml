@@ -23,4 +23,11 @@
     <string id="30310">Decodings left: %s, GWP left: %s</string>
     <string id="30311">Loading recording list failed (%s)</string>
     <string id="30312">New Addon-Version Available! Update at http://j.mp/xbmc-otr ...</string>
+    <string id="30313">Search</string>
+    <string id="30314">Scheduling</string>
+    <string id="30315">Search past recordings</string>
+    <string id="30316">Search future recordings</string>
+    <string id="30317">Schedule Job?</string>
+    <string id="30318">Job successful scheduled</string>
+    <string id="30319">Job even exists</string>
 </strings>

@@ -10,6 +10,7 @@
     Description: OTR access library
 """
 
+import urllib
 import urllib2
 import hashlib
 import os
@@ -34,6 +35,8 @@ class OtrHandler:
     __url_cookie   = None
     __url_request  = None
     __url_urlopen  = None
+    __lastUsername = ""
+    __lastPassword = ""
 
     def __loadCookies(self):
         """
@@ -81,6 +84,7 @@ class OtrHandler:
         @param url: url to request
         @type  url: string
         """
+        print url
         req = self.__url_request(url)
         req.add_header('User-Agent', 'XBMC OtrHandler')
         resp = self.__url_urlopen(req)
@@ -125,23 +129,41 @@ class OtrHandler:
         """
         requrl = "%s/downloader/api/login.php?" % URL_OTR
         requrl += self.__apiauth
-        requrl += "&email=%s&pass=%s" % (email, password)
+        requrl += "&email=%s&pass=%s" % ( urllib.quote(email), urllib.quote(password) )
         resp = self.__session = self.__getUrl(requrl)
         resp = resp.read()
         if len(resp) and ' ' in resp:
             raise Exception(resp)
+        else:
+            self.__lastUsername = email
+            self.__lastPassword = password
 
-    def deleteJob(self, email, epgid):
+    def scheduleJob(self, epgid):
+        """
+        schedule recording
+
+        @param epgid: epgid
+        @type  epgid: string
+        """
+        requrl = "%s/index.php?aktion=createJob&api=true&byid=true" % URL_OTR
+        requrl += "&email=%s&pass=%s&epgid=%s" % ( 
+            urllib.quote(self.__lastUsername), 
+            urllib.quote(self.__lastPassword), 
+            base64.urlsafe_b64encode(epgid) )
+        resp = self.__session = self.__getUrl(requrl)
+        resp = resp.read()
+        return resp
+
+
+    def deleteJob(self, epgid):
         """
         delete recording
 
-        @param email: email address or username
-        @type  email: string
         @param epgid: epgid
         @type  epgid: string
         """
         requrl = "%s/index.php?aktion=deleteJob" % URL_OTR
-        requrl += "&email=%s&epgid=%s" % ( base64.urlsafe_b64encode(email), base64.urlsafe_b64encode(epgid) )
+        requrl += "&email=%s&epgid=%s" % ( base64.urlsafe_b64encode(self.__lastUsername), base64.urlsafe_b64encode(epgid) )
         resp = self.__session = self.__getUrl(requrl)
         resp = resp.read()
         return resp
@@ -247,6 +269,31 @@ class OtrHandler:
         resp = self.__session = self.__getUrl(requrl)
         return resp.read()
 
+    def getSearchListDict(self, *args, **kwargs):
+        """
+        wrapper for getSearchList
+        """
+        lst = self.getSearchList(*args, **kwargs)
+        try:
+            return self.__getXMLDict( lst )
+        except Exception, e:
+            raise Exception(lst)
+
+
+    def getSearchList(self, searchstring, future=False):
+        """
+        get search list
+
+        @param searchstring: what to search for
+        @type  searchstring: string
+        @param future: get future recordings too
+        @type  future: bool
+        """
+        requrl = "%s/index.php?&aktion=search&api=true" % URL_OTR
+        requrl += "&future=%s" % ((future and "true") or "false")
+        requrl += "&searchterm=%s" % urllib.quote(searchstring)
+        resp = self.__session = self.__getUrl(requrl)
+        return resp.read()
 
     def getUserInfoDict(self, *args, **kwargs):
         """
@@ -258,16 +305,13 @@ class OtrHandler:
         except Exception, e:
             raise Exception(lst)
 
-    def getUserInfo(self, email):
+    def getUserInfo(self):
         """
         get user info
-
-        @param email: email address or username
-        @type  email: string
         """
         requrl = "%s/downloader/api/userinfo.php?" % URL_OTR
         requrl += self.__apiauth
-        requrl += "&email=%s" % base64.urlsafe_b64encode(email)
+        requrl += "&email=%s" % base64.urlsafe_b64encode(self.__lastUsername)
         resp = self.__session = self.__getUrl(requrl)
         return resp.read()
 

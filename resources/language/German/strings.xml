@@ -23,4 +23,11 @@
     <string id="30310">Decodings verfügbar: %s, GWP verfügbar: %s</string>
     <string id="30311">Laden der Aufnahmeliste fehlgeschlagen (%s)</string>
     <string id="30312">Neue Addon-Version Verfügbar! Update auf http://j.mp/xbmc-otr ...</string>
+    <string id="30313">Suche</string>
+    <string id="30314">Planung</string>
+    <string id="30315">Vergangene Aufnahmen suchen</string>
+    <string id="30316">Kommende Aufnahmen suchen</string>
+    <string id="30317">Auftrag anlegen?</string>
+    <string id="30318">Auftrag erfolgreich angelegt</string>
+    <string id="30319">Auftrag bereits vorhanden</string>
 </strings>

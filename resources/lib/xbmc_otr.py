@@ -16,6 +16,7 @@ import xbmc
 import xbmcplugin
 import xbmcaddon
 import xbmcgui
+import CommonFunctions
 import OtrHandler
 import logging
 import urllib
@@ -78,9 +79,17 @@ def _(x, s):
         'decodings left: %s, gwp left: %s': 30310,
         'loading recording list failed (%s)': 30311,
         'new version available': 30312,
+        'search': 30313,
+        'scheduling': 30314,
+        'searchpast': 30315,
+        'searchfuture': 30316,
+        'schedule job?': 30317,
+        'scheduleJob: OK': 30318,
+        'scheduleJob: DOUBLE': 30319,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
+    print("untranslated: %s" % s)
     return s
 
 
@@ -161,6 +170,7 @@ class creator:
     """
     _xbmcaddon = None
     _url = None
+    _common = None
 
     def __init__(self, url):
         """
@@ -169,6 +179,7 @@ class creator:
         """
         self._url = url
         self._xbmcaddon = xbmcaddon.Addon(id=url.netloc)
+        self._common = CommonFunctions
 
     def _createList(self, otr, scope):
         """
@@ -372,7 +383,75 @@ class creator:
         @type  otr: OtrHandler Instanz
         """
         return self._createList(otr, 'archive')
-        
+    
+
+    def _createFutureSearchList(self, otr): 
+        """
+        wrapper um createSearchList fuer die Zukunft aufzurufen
+
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
+        """
+        return self._createSearchList(otr, future=True)
+
+    def _createPastSearchList(self, otr): 
+        """
+        wrapper um createSearchList fuer die Vergangenheit aufzurufen
+
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
+        """
+        return self._createSearchList(otr, future=False)
+
+
+    def _createSearchList(self, otr, future=False):
+        """
+        search for specific recordings
+
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
+        """
+        listing = []
+        searchstring = self._common.getUserInput(_(self._xbmcaddon, 'search'), False)
+        if searchstring:
+            for show in getKey(otr.getSearchListDict(searchstring, future=future), 'SHOW') or []:
+                try:
+                    duration = (int(show['END']) - int(show['BEGIN'])) / 60
+                except Exception, e:
+                    duration = False
+                elementname = ""
+                elementname += "%s: " % show['STATION']
+                elementname += "%s"   % show['TITLE']
+                elementname += " ("
+                elementname += "%s"   % (show['NICEBEGIN'])
+                if duration:
+                    elementname += ", %s min" % duration
+                elementname += ")"
+                li = xbmcgui.ListItem( label=elementname )
+                li.addContextMenuItems([], replaceItems=True )
+                listing.append( [
+                    "%s://%s/%s?epgid=%s" % (
+                        self._url.scheme,
+                        self._url.netloc,
+                        'schedulejob',
+                        show['EPGID']),
+                    li,
+                    False] )
+        return listing
+
+
+    def _scheduleJob(self, otr, ask=True):
+        """
+        aufnahme loeschen
+
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
+        """
+        if not ask or xbmcgui.Dialog().yesno(__TITLE__, _(self._xbmcaddon, 'schedule job?')):
+            res = otr.scheduleJob(parse_qs(self._url.query)['epgid'].pop())
+            if len(res) > 0:
+                xbmcgui.Dialog().ok(__TITLE__, _(self._xbmcaddon, "scheduleJob: %s" % res))
+        return None
 
     def _deleteJob(self, otr):
         """
@@ -381,7 +460,7 @@ class creator:
         @param otr: OtrHandler
         @type  otr: OtrHandler Instanz
         """
-        print(otr.deleteJob( self._xbmcaddon.getSetting('otrUsername'), parse_qs(self._url.query)['epgid'].pop() ))
+        print(otr.deleteJob( parse_qs(self._url.query)['epgid'].pop() ))
         xbmc.executebuiltin("Container.Refresh")
         return []
 
@@ -392,7 +471,7 @@ class creator:
         @param otr: OtrHandler
         @type  otr: OtrHandler Instanz
         """
-        info = otr.getUserInfoDict( self._xbmcaddon.getSetting('otrUsername') )
+        info = otr.getUserInfoDict()
         line1 = "%s" % (info['EMAIL'])
         line2 = _(self._xbmcaddon, "status: %s (until %s)") % ( 
             info['STATUS'],
@@ -415,21 +494,25 @@ class creator:
         @type  otr: OtrHandler Instanz
         """
         path =  {
-                '': ['recordings', 'archive'],
+                '': ['recordings', 'archive', 'scheduling'],
+                'scheduling' : ['searchpast', 'searchfuture'],
+                'scheduling/searchpast': self._createPastSearchList,
+                'scheduling/searchfuture': self._createFutureSearchList,
                 'recordings': self._createRecordingList,
                 'archive': self._createArchiveList,
                 'deletejob': self._deleteJob,
+                'schedulejob': self._scheduleJob,
                 'userinfo': self._showUserinfo,
                 }
 
         #get the list
-        sub = getKey(path, *self._url.path.strip('/').split('/'))
+        sub = getKey(path, self._url.path.strip('/'))
         if isinstance(sub, list):
             ret = self.createDir(sub)
             if self._url.path == '/':
                 if otr.newVersionAvailable():
                     # main dir and new version available
-                    # DEBUG! remove in repo release!
+                    # TODO! remove in repo release!
                     print "new version available!"
                     ret.append(
                         [
@@ -465,6 +548,8 @@ class sender:
         @param list listing - the list of items to display
         @return void
         """
-        xbmcplugin.setContent(int(self._url.fragment), 'tvshows')
-        for item in listing:
-            xbmcplugin.addDirectoryItem(int(self._url.fragment), item[0], item[1], item[2])
+        handler = int(self._url.fragment)
+        xbmcplugin.setContent(handler, 'tvshows')
+        if listing:
+            for item in listing:
+                xbmcplugin.addDirectoryItem(handler, item[0], item[1], item[2])
