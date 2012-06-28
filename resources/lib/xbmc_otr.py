@@ -86,6 +86,7 @@ def _(x, s):
         'schedule job?': 30317,
         'scheduleJob: OK': 30318,
         'scheduleJob: DOUBLE': 30319,
+        'pasthighlights': 30320,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -406,7 +407,7 @@ class creator:
 
     def _createSearchList(self, otr, future=False):
         """
-        search for specific recordings
+        search for recordings
 
         @param otr: OtrHandler
         @type  otr: OtrHandler Instanz
@@ -439,10 +440,42 @@ class creator:
                     False] )
         return listing
 
+    def _createPastHightlightsList(self, otr):
+        """
+        get past hightlights
+
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
+        """
+        items = getKey(otr.getPastHighlightsDict(), 'channel', 'item') or []
+        listing = []
+        for item in items:
+            thumbnail = getKey(item, '{http://search.yahoo.com/mrss/}thumbnail', 'url')
+            title = item['title']
+            li = xbmcgui.ListItem( 
+                label=title, 
+                iconImage=thumbnail or None,
+                thumbnailImage=thumbnail or None )
+            description = getKey(item, 'description')
+            if description:
+                description = self._common.stripTags(description)
+                description = description.replace('Informationen und Screnshots', '')
+                description = description.replace('Zum Download', '')
+                li.setInfo('video', {'plot' : description, 'title': title })
+                li.addContextMenuItems([], replaceItems=True )
+            listing.append( [
+                    "%s://%s/%s?epgid=%s" % (
+                        self._url.scheme,
+                        self._url.netloc,
+                        'schedulejob',
+                        item['epg_id']),
+                    li,
+                    False] )
+        return listing
 
     def _scheduleJob(self, otr, ask=True):
         """
-        aufnahme loeschen
+        aufnahme planen
 
         @param otr: OtrHandler
         @type  otr: OtrHandler Instanz
@@ -495,9 +528,10 @@ class creator:
         """
         path =  {
                 '': ['recordings', 'archive', 'scheduling'],
-                'scheduling' : ['searchpast', 'searchfuture'],
+                'scheduling' : ['searchpast', 'searchfuture', 'pasthighlights'],
                 'scheduling/searchpast': self._createPastSearchList,
                 'scheduling/searchfuture': self._createFutureSearchList,
+                'scheduling/pasthighlights': self._createPastHightlightsList,
                 'recordings': self._createRecordingList,
                 'archive': self._createArchiveList,
                 'deletejob': self._deleteJob,

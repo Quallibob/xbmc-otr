@@ -269,6 +269,30 @@ class OtrHandler:
         resp = self.__session = self.__getUrl(requrl)
         return resp.read()
 
+    def getPastHighlightsDict(self, *args, **kwargs):
+        """
+        wrapper for getSearchList
+        """
+        url = "%s/rss/highlights_past.php" % URL_OTR
+        lst = self.getRss(url, *args, **kwargs)
+        try:
+            return self.__getXMLDict( lst )
+        except Exception, e:
+            raise Exception(lst)
+
+
+    def getRss(self, url):
+        """
+        get search list
+
+        @param searchstring: what to search for
+        @type  searchstring: string
+        @param future: get future recordings too
+        @type  future: bool
+        """
+        resp = self.__session = self.__getUrl(url)
+        return resp.read()
+
     def getSearchListDict(self, *args, **kwargs):
         """
         wrapper for getSearchList
