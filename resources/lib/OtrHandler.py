@@ -22,7 +22,7 @@ from xml.etree import ElementTree
 
 URL_OTR="http://www.onlinetvrecorder.com"
 URL_SUBCODE="http://j.mp/otrsubcode"
-VERSION="0.2"
+VERSION="0.3"
 VERSION_CHECK="http://j.mp/otrhandler-version-check"
 
 class OtrHandler:
