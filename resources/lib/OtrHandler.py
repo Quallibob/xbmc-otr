@@ -271,7 +271,7 @@ class OtrHandler:
 
     def getPastHighlightsDict(self, *args, **kwargs):
         """
-        wrapper for getSearchList
+        wrapper for getRss to get past highlights
         """
         url = "%s/rss/highlights_past.php" % URL_OTR
         lst = self.getRss(url, *args, **kwargs)
@@ -285,10 +285,8 @@ class OtrHandler:
         """
         get search list
 
-        @param searchstring: what to search for
-        @type  searchstring: string
-        @param future: get future recordings too
-        @type  future: bool
+        @param url: what to search for
+        @type  url: string
         """
         resp = self.__session = self.__getUrl(url)
         return resp.read()
