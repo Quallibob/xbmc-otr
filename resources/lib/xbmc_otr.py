@@ -20,6 +20,7 @@ import CommonFunctions
 import OtrHandler
 import logging
 import urllib
+import base64
 
 try:
     from cgi import parse_qs
@@ -87,6 +88,8 @@ def _(x, s):
         'scheduleJob: OK': 30318,
         'scheduleJob: DOUBLE': 30319,
         'pasthighlights': 30320,
+        'downloadqueue': 30321,
+        'queueposition %s': 30322,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -290,7 +293,12 @@ class creator:
                 return False
             else:
                 size = getKey(elementinfo, stream, 'SIZE')
-                uri  = getKey(elementinfo, stream, stype)
+                fileuri  = getKey(elementinfo, stream, stype)
+                uri = "%s://%s/%s?fileuri=%s" % (
+                    self._url.scheme,
+                    self._url.netloc,
+                    'play',
+                    base64.urlsafe_b64encode(fileuri))
                 gwp  = getKey(elementinfo, stream, 'GWPCOSTS', stype)
 
             # aggergieren und ausliefern
@@ -322,6 +330,7 @@ class creator:
 
                 # progressdialog updaten
                 percent = int((recordings.index(element)+1)*100/len(recordings))
+                if prdialog.iscanceled(): return listing
                 prdialog.update(percent, element['FILENAME'])
 
                 try:
@@ -336,6 +345,7 @@ class creator:
             # progressdialog abschliessen
             prdialog.close()
             return listing
+
 
     def createDir(self, subs):
         """
@@ -515,6 +525,35 @@ class creator:
         xbmcgui.Dialog().ok( __TITLE__, line1, line2, line3)
         return []
 
+    def _playWithWait(self, otr):
+        queuemax = 0;
+        waiting = True
+        prdialog = xbmcgui.DialogProgress()
+        prdialog.create(_(self._xbmcaddon, 'downloadqueue'))
+        prdialog.update(0)
+        while waiting:
+            print "waiting"
+            try:
+                fileuri = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
+                xbmc.executebuiltin("PlayMedia(%s)" % otr.getFileDownload(fileuri))
+                prdialog.close()
+                break
+            except otr.inDownloadqueueException, e:
+                print "otr.inDownloadqueueException"
+                if e.position > queuemax:
+                    queuemax = e.position
+                percent = (100 - int(e.position * 100 / queuemax))
+                print "%s percent" % percent
+                prdialog.update(percent, _(self._xbmcaddon, 'queueposition %s') % e.position)
+                print "sleep 10 sec!"
+                for i in range(1, 20):
+                    if not prdialog.iscanceled():
+                        time.sleep(0.5)
+                    else:
+                        waiting = False
+                        break
+            
+        
     def get(self, otr):
         """
         pfad aufloesen und auflistung zurueckliefern
@@ -537,6 +576,7 @@ class creator:
                 'deletejob': self._deleteJob,
                 'schedulejob': self._scheduleJob,
                 'userinfo': self._showUserinfo,
+                'play': self._playWithWait,
                 }
 
         #get the list

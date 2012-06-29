@@ -31,4 +31,6 @@
     <string id="30318">Auftrag erfolgreich angelegt</string>
     <string id="30319">Auftrag bereits vorhanden</string>
     <string id="30320">Highlights der letzten Tage</string>
+    <string id="30321">Downloadwarteschlange</string>
+    <string id="30322">Position: %s</string>
 </strings>
