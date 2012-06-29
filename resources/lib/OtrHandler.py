@@ -19,11 +19,21 @@ import base64
 import socket
 from xml.etree import ElementTree
 
+try: import simplejson as json
+except ImportError: import json
 
 URL_OTR="http://www.onlinetvrecorder.com"
 URL_SUBCODE="http://j.mp/otrsubcode"
 VERSION="0.3"
 VERSION_CHECK="http://j.mp/otrhandler-version-check"
+
+class inDownloadqueueException(Exception):
+    position = 0
+    def __init__(self, value, position):
+        self.value = value
+        self.position = position
+    def __str__(self):
+        return repr(self.value)
 
 class OtrHandler:
     """
@@ -269,6 +279,41 @@ class OtrHandler:
         resp = self.__session = self.__getUrl(requrl)
         return resp.read()
 
+
+    def getFileDownload(self, fileuri):
+        """
+        get filedownloadlink or wait status
+
+        @param fileuri: the downloaduri
+        @type  fileuri: string
+        """
+
+        def getDownloadinfo(fileuri):
+            apiuri  = fileuri.replace('/download/', '/api/', 1)
+            resp = self.__session = self.__getUrl(apiuri)
+            ret = resp.read()
+            downloadinfo = json.loads(ret)
+            return downloadinfo
+
+        print "#1"
+        downloadinfo = getDownloadinfo(fileuri)
+        if ('reservation_filename' in downloadinfo and
+            'reservation_cancellink' in downloadinfo):
+            self.__getUrl(downloadinfo['reservation_cancellink'])
+            downloadinfo = getDownloadinfo(fileuri)
+
+        print "#2"
+        if 'filedownloadlink' in downloadinfo:
+            return downloadinfo['filedownloadlink']
+
+        print "#3"
+        if 'queueposition' in downloadinfo:
+            raise inDownloadqueueException('in downloadqueue', int(downloadinfo[queueposition]))
+        
+        print "#4"
+        return False
+
+        
     def getPastHighlightsDict(self, *args, **kwargs):
         """
         wrapper for getRss to get past highlights
@@ -279,7 +324,6 @@ class OtrHandler:
             return self.__getXMLDict( lst )
         except Exception, e:
             raise Exception(lst)
-
 
     def getRss(self, url):
         """
