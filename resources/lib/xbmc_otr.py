@@ -286,8 +286,12 @@ class creator:
             elementinfo = otr.getFileInfoDict(element['ID'], element['EPGID'], element['FILENAME'])
             for stream in streams: 
                 if getKey(elementinfo, stream): break
-            stype = ( (getKey(elementinfo, stream, 'FREE') and 'FREE') or
-                      (getKey(elementinfo, stream, 'PRIO') and 'PRIO') or False )
+            if  self._xbmcaddon.getSetting('otrPreferPrio') == 'true':
+                stype = ( (getKey(elementinfo, stream, 'PRIO') and 'PRIO') or
+                          (getKey(elementinfo, stream, 'FREE') and 'FREE') or False )
+            else:
+                stype = ( (getKey(elementinfo, stream, 'FREE') and 'FREE') or
+                          (getKey(elementinfo, stream, 'PRIO') and 'PRIO') or False )
 
             if not stype: 
                 return False

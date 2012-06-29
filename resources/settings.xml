@@ -13,8 +13,11 @@
         <setting id="otrPassword" type="text" label="30102" option="hidden" />
     </category>
     <category label="30200">
-        <setting id="otrPreferHD"  type="bool" default="true" label="30201" />	
+        <setting id="otrPreferHD"  type="bool" default="false" label="30201" />	
         <setting id="otrPreferHQ"  type="bool" default="true" label="30202" />	
         <setting id="otrPreferCut" type="bool" default="true" label="30203" />	
+    </category>
+    <category label="30500">
+        <setting id="otrPreferPrio" type="bool" default="false" label="30501" />	
     </category>
 </settings>
