@@ -5,10 +5,13 @@
     <string id="30101">E-Mail</string>
     <string id="30102">Password</string>
     <!-- Addon Quality Settings -->
-    <string id="30200">Quality Settings</string>
+    <string id="30200">Quality</string>
     <string id="30201">Prefer HD version</string>
     <string id="30202">Prefer HQ version</string>
     <string id="30203">Prefer cut version</string>
+    <!-- Addon Download Settings -->
+    <string id="30500">Download</string>
+    <string id="30501">Prefer Priority-Download</string>
     <!-- Message strings -->
     <string id="30300">Please set your OTR login in Addon Setup</string>
     <string id="30301">OTR Login Failed (%s)</string>
