@@ -90,6 +90,7 @@ def trace(
 
 
 
+otr = False
 
 try:
     _url = urlparse.urlparse("%s%s#%s" % (sys.argv[0], sys.argv[2], sys.argv[1]))
@@ -100,8 +101,11 @@ try:
     sender = worker.sender(_url)
     
     housekeeper.start()
-    sender.send(creator.get(housekeeper.getOTR()))
+    if not otr:
+        otr = housekeeper.getOTR()
+    sender.send(creator.get(otr))
     housekeeper.end()
+
 except Exception, e:
     xbmc.log("#### BEGIN OTR-XBMC EXCEPTION ####", xbmc.LOGERROR)
     to = trace(e)
