@@ -308,7 +308,7 @@ class OtrHandler:
 
         print "#3"
         if 'queueposition' in downloadinfo:
-            raise self.inDownloadqueueException('in downloadqueue', int(downloadinfo[queueposition]))
+            raise self.inDownloadqueueException('in downloadqueue', int(downloadinfo['queueposition']))
         
         print "#4"
         return False
