@@ -21,6 +21,7 @@ import OtrHandler
 import logging
 import urllib
 import base64
+import time
 
 try:
     from cgi import parse_qs
@@ -529,19 +530,21 @@ class creator:
         xbmcgui.Dialog().ok( __TITLE__, line1, line2, line3)
         return []
 
-    def _playWithWait(self, otr):
+
+    def _play(self, otr):
         queuemax = 0;
-        waiting = True
         prdialog = xbmcgui.DialogProgress()
         prdialog.create(_(self._xbmcaddon, 'downloadqueue'))
         prdialog.update(0)
-        while waiting:
+        requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
+        while True:
             print "waiting"
             try:
-                fileuri = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
-                xbmc.executebuiltin("PlayMedia(%s)" % otr.getFileDownload(fileuri))
+		fileuri = otr.getFileDownload(requesturi)
+		print "got url %s" % fileuri
                 prdialog.close()
-                break
+                xbmc.executebuiltin("PlayMedia(%s)" % fileuri)
+                return True
             except otr.inDownloadqueueException, e:
                 print "otr.inDownloadqueueException"
                 if e.position > queuemax:
@@ -554,8 +557,7 @@ class creator:
                     if not prdialog.iscanceled():
                         time.sleep(0.5)
                     else:
-                        waiting = False
-                        break
+                        return False
             
         
     def get(self, otr):
@@ -580,7 +582,7 @@ class creator:
                 'deletejob': self._deleteJob,
                 'schedulejob': self._scheduleJob,
                 'userinfo': self._showUserinfo,
-                'play': self._playWithWait,
+                'play': self._play,
                 }
 
         #get the list
@@ -626,8 +628,9 @@ class sender:
         @param list listing - the list of items to display
         @return void
         """
-        handler = int(self._url.fragment)
-        xbmcplugin.setContent(handler, 'tvshows')
-        if listing:
+        if isinstance(listing, list):
+            handler = int(self._url.fragment)
+            xbmcplugin.setContent(handler, 'tvshows')
             for item in listing:
                 xbmcplugin.addDirectoryItem(handler, item[0], item[1], item[2])
+            xbmcplugin.endOfDirectory(handler)

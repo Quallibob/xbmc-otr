@@ -101,7 +101,6 @@ try:
     
     housekeeper.start()
     sender.send(creator.get(housekeeper.getOTR()))
-    xbmcplugin.endOfDirectory(int(_url.fragment))
     housekeeper.end()
 except Exception, e:
     xbmc.log("#### BEGIN OTR-XBMC EXCEPTION ####", xbmc.LOGERROR)
