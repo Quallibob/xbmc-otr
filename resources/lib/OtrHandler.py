@@ -27,14 +27,6 @@ URL_SUBCODE="http://j.mp/otrsubcode"
 VERSION="0.3"
 VERSION_CHECK="http://j.mp/otrhandler-version-check"
 
-class inDownloadqueueException(Exception):
-    position = 0
-    def __init__(self, value, position):
-        self.value = value
-        self.position = position
-    def __str__(self):
-        return repr(self.value)
-
 class OtrHandler:
     """
     OTR Representation
@@ -48,6 +40,14 @@ class OtrHandler:
     __lastUsername = ""
     __lastPassword = ""
 
+    class inDownloadqueueException(Exception):
+        position = 0
+        def __init__(self, value, position):
+            self.value = value
+            self.position = position
+        def __str__(self):
+            return repr(self.value)
+    
     def __loadCookies(self):
         """
         get cookie handler
