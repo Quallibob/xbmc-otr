@@ -35,5 +35,6 @@
     <string id="30319">Job even exists</string>
     <string id="30320">Highlights of the last days</string>
     <string id="30321">Downloadqueue</string>
-    <string id="30322">Position: %s</string>
+    <string id="30322">Position: %s of %s</string>
+    <string id="30323">Next try in %s seconds.</string>
 </strings>
