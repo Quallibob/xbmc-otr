@@ -90,7 +90,8 @@ def _(x, s):
         'scheduleJob: DOUBLE': 30319,
         'pasthighlights': 30320,
         'downloadqueue': 30321,
-        'queueposition %s': 30322,
+        'queueposition %s of %s': 30322,
+        'refresh in %s sec': 30323,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -539,7 +540,6 @@ class creator:
         prdialog.update(0)
         requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
         while True:
-            print "waiting"
             try:
 		fileuri = otr.getFileDownload(requesturi)
 		print "got url %s" % fileuri
@@ -547,14 +547,14 @@ class creator:
                 xbmc.executebuiltin("PlayMedia(%s)" % fileuri)
                 return True
             except otr.inDownloadqueueException, e:
-                print "otr.inDownloadqueueException"
                 if e.position > queuemax:
                     queuemax = e.position
                 percent = (100 - int(e.position * 100 / queuemax))
-                print "%s percent" % percent
-                prdialog.update(percent, _(self._xbmcaddon, 'queueposition %s') % e.position)
-                print "sleep 10 sec!"
-                for i in range(1, 20):
+                for step in reversed(range(1, 20)):
+                    prdialog.update(
+                        percent, 
+                        _(self._xbmcaddon, 'queueposition %s of %s') % (e.position, queuemax),
+                        _(self._xbmcaddon, 'refresh in %s sec') % int(step/2) )
                     if not prdialog.iscanceled():
                         time.sleep(0.5)
                     else:
