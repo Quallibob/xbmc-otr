@@ -345,7 +345,8 @@ class creator:
                     print "getFileInfo failed (%s)" % str(e)
                     xbmc.executebuiltin('Notification("%s", "%s")' % (element['FILENAME'], str(e)))
                 else:
-                    listing.append([ fileinfo['uri'], getListItemFromElement(element, fileinfo), False ])
+                    if fileinfo:
+                        listing.append([ fileinfo['uri'], getListItemFromElement(element, fileinfo), False ])
 
             # progressdialog abschliessen
             prdialog.close()
