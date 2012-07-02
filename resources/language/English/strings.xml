@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <strings>
     <!-- Addon Login Settings -->
-    <string id="30100">Login</string>
+    <string id="30100">General</string>
     <string id="30101">E-Mail</string>
     <string id="30102">Password</string>
+    <string id="30103">Timeout (in Seconds)</string>
+    <string id="30104">Ask before scheduling Jobs</string>
+    <string id="30105">Ask before deleting Jobs</string>
     <!-- Addon Quality Settings -->
     <string id="30200">Quality</string>
     <string id="30201">Prefer HD version</string>
     <string id="30202">Prefer HQ version</string>
     <string id="30203">Prefer cut version</string>
-    <!-- Addon Download Settings -->
-    <string id="30500">Download</string>
-    <string id="30501">Prefer Priority-Download</string>
+    <string id="30204">Prefer Priority-Download</string>
     <!-- Message strings -->
     <string id="30300">Please set your OTR login in Addon Setup</string>
     <string id="30301">OTR Login Failed (%s)</string>
@@ -37,4 +38,6 @@
     <string id="30321">Downloadqueue</string>
     <string id="30322">Position: %s of %s</string>
     <string id="30323">Next try in %s seconds.</string>
+    <string id="30324">Delete job?</string>
+    <string id="30325">Job deleted</string>
 </strings>
