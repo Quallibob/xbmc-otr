@@ -36,9 +36,10 @@ __THUMBURL__ = 'http://thumbs.onlinetvrecorder.com/'
 
 try:
     import StorageServer
+    cache = StorageServer.StorageServer(__TITLE__, 31)
 except:
     import storageserverdummy as StorageServer
-cache = StorageServer.StorageServer(__TITLE__, 31) # (Your plugin name, Cache time in hours)
+    cache = StorageServer.StorageServer(__TITLE__)
 #cache.dbg = True
 
 def getKey(obj, *elements):
