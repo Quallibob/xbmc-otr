@@ -36,7 +36,7 @@ __THUMBURL__ = 'http://thumbs.onlinetvrecorder.com/'
 
 try:
     import StorageServer
-    cache = StorageServer.StorageServer(__TITLE__, 31)
+    cache = StorageServer.StorageServer(__TITLE__, 7)
 except:
     import storageserverdummy as StorageServer
     cache = StorageServer.StorageServer(__TITLE__)
@@ -101,6 +101,7 @@ def _(x, s):
         'refresh in %s sec': 30323,
         'delete job?': 30324,
         'job deleted': 30325,
+        'refresh element': 30326,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -271,8 +272,17 @@ class creator:
                         self._url.netloc,
                         'deletejob',
                         element['EPGID']), ),
-                  ( _(self._xbmcaddon, 'refresh listing'), 
-                    "Container.Refresh" ),
+                  ( _(self._xbmcaddon, 'refresh listing'),
+                    "XBMC.RunPlugin(%s://%s/%s)" % (
+                        self._url.scheme,
+                        self._url.netloc,
+                        'cleancache'), ),
+                  ( _(self._xbmcaddon, 'refresh element'),
+                    "XBMC.RunPlugin(%s://%s/%s?search=%%25%s)" % (
+                        self._url.scheme,
+                        self._url.netloc,
+                        'cleancache',
+                        element['EPGID']), ),
                   ( _(self._xbmcaddon, 'userinfo'), 
                     "XBMC.RunPlugin(%s://%s/%s)" % (
                         self._url.scheme,
@@ -530,6 +540,21 @@ class creator:
                     _(self._xbmcaddon, "scheduleJob: %s" % res) ) )
             return True
 
+    def _cleanCache(self, otr, search="%"):
+        """
+        cache aufraeumen
+
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
+        @param search: key selector
+        @type  search: string
+        """
+        if 'search' in parse_qs(self._url.query):
+            search = parse_qs(self._url.query)['search'].pop()
+        cache.delete(search)
+        xbmc.executebuiltin("Container.Refresh")
+        return True
+
     def _deleteJob(self, otr, ask=True):
         """
         aufnahme loeschen
@@ -577,7 +602,7 @@ class creator:
             return False
         else:
             requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
-        print parse_qs(self._url.query)
+
         if 'epgid' in parse_qs(self._url.query):
             egid = parse_qs(self._url.query)['epgid'].pop()
             cache.delete('epgid_%s' % egid)
@@ -633,6 +658,7 @@ class creator:
                 'schedulejob': self._scheduleJob,
                 'userinfo': self._showUserinfo,
                 'play': self._play,
+                'cleancache': self._cleanCache,
                 }
 
         #get the list
