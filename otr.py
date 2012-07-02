@@ -9,14 +9,19 @@
 
 import os
 import sys
+import xbmcplugin
+import xbmcaddon
 
 #set our library path
-sys.path.insert(0, xbmc.translatePath( os.path.join( os.getcwd(), 'resources', 'lib' ) ) )
+sys.path.insert(0, xbmc.translatePath( 
+	os.path.join( 
+		xbmcaddon.Addon(id=sys.argv[0]).getAddonInfo('path'), 
+		'resources', 
+		'lib' ) ) )
 
 # local version as bugfix for http://bugs.python.org/issue9374
 import urlparse
 
-import xbmcplugin
 import xbmc_otr as worker
 
 def trace(
