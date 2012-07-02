@@ -30,10 +30,16 @@ except ImportError:
     from urlparse import parse_qs
     
 
-
 __TITLE__ = 'onlinetvrecorder.com'
 __THUMBURL__ = 'http://thumbs.onlinetvrecorder.com/'
 
+
+try:
+    import StorageServer
+except:
+    import storageserverdummy as StorageServer
+cache = StorageServer.StorageServer(__TITLE__, 31) # (Your plugin name, Cache time in hours)
+#cache.dbg = True
 
 def getKey(obj, *elements):
     for element in elements:
@@ -165,7 +171,7 @@ class housekeeper:
                 print("otr login successful")
 
         try:
-            timeout = int(self._xbmcaddon.getSetting('otrTimeout'))
+            timeout = int(float(self._xbmcaddon.getSetting('otrTimeout')))
         except Exception, e:
             pass
         else:
@@ -294,7 +300,13 @@ class creator:
                     streams.insert(0, 'HDMP4_geschnitten')
 
             # fileinfoDict abfragen
-            elementinfo = otr.getFileInfoDict(element['ID'], element['EPGID'], element['FILENAME'])
+            cachekey = 'epgid_%s' % element['EPGID']
+            if cache.get(cachekey):
+                elementinfo = eval(cache.get(cachekey))
+            else:
+                elementinfo = otr.getFileInfoDict(element['EPGID'])
+                cache.set(cachekey, repr(elementinfo))
+
             for stream in streams: 
                 if getKey(elementinfo, stream): break
             if  self._xbmcaddon.getSetting('otrPreferPrio') == 'true':
@@ -309,11 +321,12 @@ class creator:
             else:
                 size = getKey(elementinfo, stream, 'SIZE')
                 fileuri  = getKey(elementinfo, stream, stype)
-                uri = "%s://%s/%s?fileuri=%s" % (
+                uri = "%s://%s/%s?fileuri=%s&epgid=%s" % (
                     self._url.scheme,
                     self._url.netloc,
                     'play',
-                    base64.urlsafe_b64encode(fileuri))
+                    base64.urlsafe_b64encode(fileuri),
+                    element['EPGID'])
                 gwp  = getKey(elementinfo, stream, 'GWPCOSTS', stype)
 
             # aggergieren und ausliefern
@@ -557,11 +570,21 @@ class creator:
         prdialog = xbmcgui.DialogProgress()
         prdialog.create(_(self._xbmcaddon, 'downloadqueue'))
         prdialog.update(0)
-        requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
+
+        if not 'fileuri' in parse_qs(self._url.query):
+            raise Exception('play without fileuri not possible')
+            return False
+        else:
+            requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
+        print parse_qs(self._url.query)
+        if 'epgid' in parse_qs(self._url.query):
+            egid = parse_qs(self._url.query)['epgid'].pop()
+            cache.delete('epgid_%s' % egid)
+
         while True:
             try:
-		fileuri = otr.getFileDownload(requesturi)
-		print "got url %s" % fileuri
+                fileuri = otr.getFileDownload(requesturi)
+                print "got url %s" % fileuri
                 prdialog.close()
                 xbmc.executebuiltin("PlayMedia(%s)" % fileuri)
                 return True
@@ -578,6 +601,12 @@ class creator:
                         time.sleep(0.5)
                     else:
                         return False
+            except otr.foundDownloadErrorException, e:
+                xbmcgui.Dialog().ok(
+                    "%s (%s)" % (__TITLE__, e.number),
+                    _(self._xbmcaddon, e.value) )
+                return False
+                
             
         
     def get(self, otr):

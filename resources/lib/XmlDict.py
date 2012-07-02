@@ -40,6 +40,9 @@ class XmlDict(dict):
 
     And then use xmldict for what it is... a dict.
     '''
+    def __call__(self):
+        return dict(self)
+
     def __init__(self, parent_element):
 	childrenNames = [child.tag for child in parent_element.getchildren()]
         if parent_element.items():

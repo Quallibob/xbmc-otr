@@ -40,6 +40,14 @@ class OtrHandler:
     __lastUsername = ""
     __lastPassword = ""
 
+    class foundDownloadErrorException(Exception):
+        number = 0
+        def __init__(self, number, value):
+            self.value = value
+            self.number = number
+        def __str__(self):
+            return repr(self.value)
+    
     class inDownloadqueueException(Exception):
         position = 0
         def __init__(self, value, position):
@@ -260,7 +268,7 @@ class OtrHandler:
         except Exception, e:
             raise Exception(lst)
 
-    def getFileInfo(self, fid, epgid, filename):
+    def getFileInfo(self, epgid, fid=False, filename=False):
         """
         get file details
 
@@ -273,9 +281,11 @@ class OtrHandler:
         """
         requrl = "%s/downloader/api/request_file2.php?" % URL_OTR
         requrl += self.__apiauth
-        requrl += "&id=%s" % base64.urlsafe_b64encode(fid)
         requrl += "&epgid=%s" % base64.urlsafe_b64encode(epgid)
-        requrl += "&file=%s" % base64.urlsafe_b64encode(filename)
+        if fid:
+            requrl += "&id=%s" % base64.urlsafe_b64encode(fid)
+        if filename:
+            requrl += "&file=%s" % base64.urlsafe_b64encode(filename)
         resp = self.__session = self.__getUrl(requrl)
         return resp.read()
 
@@ -310,7 +320,15 @@ class OtrHandler:
         if 'queueposition' in downloadinfo:
             raise self.inDownloadqueueException('in downloadqueue', int(downloadinfo['queueposition']))
         
-        print "#4"
+        print '#4'
+        if 'error' in downloadinfo:
+            number = downloadinfo['error']
+            message = ""
+            if 'message' in downloadinfo:
+                 message = downloadinfo['message']
+            raise self.foundDownloadErrorException(number, message)
+
+        print "#5"
         return False
 
         
@@ -382,7 +400,8 @@ class OtrHandler:
         return resp.read()
 
 
-    def setTimeout(timeout=90):
+    def setTimeout(self, timeout=90):
+        print "set timeout to %s " % timeout
         return socket.setdefaulttimeout(timeout)
 
     def __init__(self, did=False, authcode=False, sockettimeout=90):
@@ -397,7 +416,7 @@ class OtrHandler:
         @type  sockettimeout: int
         """
         if sockettimeout:
-            socket.setdefaulttimeout(sockettimeout)
+            self.setTimeout(sockettimeout)
         self.__loadCookies()
         if did and authcode:
             self.setAPIAuthKey(did, authcode)
@@ -417,6 +436,6 @@ if __name__ == '__main__':
     if 'FILE' in recordlist:
         for f in recordlist['FILE']:
             pprint(f)
-            fi = otr.getFileInfoDict(f['ID'], f['EPGID'], f['FILENAME'])
+            fi = otr.getFileInfoDict(f['EPGID'], f['ID'], f['FILENAME'])
             pprint(fi)
 
