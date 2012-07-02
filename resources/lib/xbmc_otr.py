@@ -162,6 +162,10 @@ class housekeeper:
         else:
             try:
                 # eigentlicher login
+                coockie = os.path.join(
+                            xbmc.translatePath('special://temp'), 
+                            '%s%s' % (__TITLE__, '.cookie') )
+                self._otr.setCookie(coockie)
                 self._otr.login(username, password)
             except Exception, e:
                 print "login failed (2)"

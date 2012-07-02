@@ -34,11 +34,12 @@ class OtrHandler:
     
     __session = False
     __apiauth = ""
-    __url_cookie   = None
-    __url_request  = None
-    __url_urlopen  = None
-    __lastUsername = ""
-    __lastPassword = ""
+    __url_cookiepath = False
+    __url_cookie     = None
+    __url_request    = None
+    __url_urlopen    = None
+    __lastUsername   = ""
+    __lastPassword   = ""
 
     class foundDownloadErrorException(Exception):
         number = 0
@@ -55,11 +56,14 @@ class OtrHandler:
             self.position = position
         def __str__(self):
             return repr(self.value)
-    
-    def __loadCookies(self):
+
+
+    def setCookie(self, path=False):
         """
-        get cookie handler
+        set cookie handler
         """
+        if path:
+            self.__url_cookiepath = path
         try:
             import cookielib
         except ImportError:
@@ -71,7 +75,12 @@ class OtrHandler:
             else:
                 urlopen = ClientCookie.urlopen
                 Request = ClientCookie.Request
-                self.__url_cookie = ClientCookie.LWPCookieJar()
+                self.__url_cookie = ClientCookie.MozillaCookieJar()
+                if path and os.path.isfile(path):
+                    try:
+                        self.__url_cookie.load(path)
+                    except Exception, e:
+                        pass
                 opener = ClientCookie.build_opener(ClientCookie.HTTPCookieProcessor(self.__url_cookie))
                 ClientCookie.install_opener(opener)
                 self.__url_request = Request
@@ -79,7 +88,12 @@ class OtrHandler:
         else:
             urlopen = urllib2.urlopen
             Request = urllib2.Request
-            self.__url_cookie = cookielib.LWPCookieJar()
+            self.__url_cookie = cookielib.MozillaCookieJar()
+            if path and os.path.isfile(path):
+                try:
+                    self.__url_cookie.load(path)
+                except Exception, e:
+                    pass
             opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.__url_cookie))
             urllib2.install_opener(opener)
             self.__url_request = Request
@@ -155,6 +169,11 @@ class OtrHandler:
         else:
             self.__lastUsername = email
             self.__lastPassword = password
+            if self.__url_cookiepath:
+                try:
+                    self.__url_cookie.save(self.__url_cookiepath)
+                except Exception, e:
+                    pass
 
     def scheduleJob(self, epgid):
         """
@@ -416,7 +435,7 @@ class OtrHandler:
         """
         if sockettimeout:
             self.setTimeout(sockettimeout)
-        self.__loadCookies()
+        self.setCookie()
         if did and authcode:
             self.setAPIAuthKey(did, authcode)
         else:
