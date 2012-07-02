@@ -1,23 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     Document   : settings.xml
-    Package    : GPodder Integration to XBMC
-    Author     : Ashley Kitson
-    Copyright  : 2010, Ashley Kitson, UK
-    License    : Gnu General Public License - see LICENSE.TXT
-    Description: Settings for gpodder integration
+    Package    : OTR Integration to XBMC
+    Author     : Frank Epperlein
+    Copyright  : 2012, Frank Epperlein, DE
+    License    : Gnu General Public License 2
+    Description: Settings for OTR integration
 -->
 <settings>
     <category label="30100">
         <setting id="otrUsername" type="text" label="30101" />
         <setting id="otrPassword" type="text" label="30102" option="hidden" />
+        <setting type="sep" />
+        <setting id="otrTimeout" type="slider" label="30103" range="10,10,120" default="60" option="int"/>
+        <setting type="sep" />
+        <setting id="otrAskSchedule"  type="bool" default="false" label="30104" />	
+        <setting id="otrAskDelete"  type="bool" default="false" label="30105" />	
     </category>
     <category label="30200">
         <setting id="otrPreferHD"  type="bool" default="false" label="30201" />	
         <setting id="otrPreferHQ"  type="bool" default="true" label="30202" />	
         <setting id="otrPreferCut" type="bool" default="true" label="30203" />	
-    </category>
-    <category label="30500">
-        <setting id="otrPreferPrio" type="bool" default="false" label="30501" />	
+        <setting type="sep" />
+        <setting id="otrPreferPrio" type="bool" default="false" label="30204" />	
     </category>
 </settings>

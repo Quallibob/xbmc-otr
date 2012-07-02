@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <strings>
     <!-- Addon Login Settings -->
-    <string id="30100">Local Library</string>
+    <string id="30100">Allgemein</string>
     <string id="30101">E-Mail-Adresse</string>
     <string id="30102">Passwort</string>
+    <string id="30103">Timeout (in Sekunden)</string>
+    <string id="30103">Vor dem Löschen von Aufträgen fragen</string>
     <!-- Addon Quality Settings -->
     <string id="30200">Qualität</string>
     <string id="30201">HD Version bevorzugen</string>
     <string id="30202">HQ Version bevorzugen</string>
     <string id="30203">Geschnittene Version bevorzugen</string>
-    <!-- Addon Download Settings -->
-    <string id="30500">Download</string>
-    <string id="30501">Priority-Download bevorzugen</string>
+    <string id="30204">Priority-Download bevorzugen</string>
     <!-- Message strings -->
     <string id="30300">Bitte konfigurieren sie ihren OTR Zugang im OTR Addon Setup</string>
     <string id="30301">OTR login Fehlgeschlagen (%s)</string>
@@ -37,4 +37,6 @@
     <string id="30321">Downloadwarteschlange</string>
     <string id="30322">Position: %s von %s</string>
     <string id="30323">Nächster Versuch in %s Sekunden.</string>
+    <string id="30324">Auftrag Löschen?</string>
+    <string id="30325">Auftrag gelöscht</string>
 </strings>

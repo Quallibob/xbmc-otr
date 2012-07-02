@@ -382,6 +382,9 @@ class OtrHandler:
         return resp.read()
 
 
+    def setTimeout(timeout=90):
+        return socket.setdefaulttimeout(timeout)
+
     def __init__(self, did=False, authcode=False, sockettimeout=90):
         """
         constructor

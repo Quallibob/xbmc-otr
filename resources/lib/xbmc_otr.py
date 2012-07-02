@@ -92,6 +92,8 @@ def _(x, s):
         'downloadqueue': 30321,
         'queueposition %s of %s': 30322,
         'refresh in %s sec': 30323,
+        'delete job?': 30324,
+        'job deleted': 30325,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -139,7 +141,6 @@ class housekeeper:
                _(self._xbmcaddon, 'missing login credentials') )
             raise Exception("missing login credentials")
 
-
         # login
         try:
             # hanlder instanz laden
@@ -162,6 +163,14 @@ class housekeeper:
                 sys.exit(0)
             else:
                 print("otr login successful")
+
+        try:
+            timeout = int(self._xbmcaddon.getSetting('otrTimeout'))
+        except Exception, e:
+            pass
+        else:
+            self._otr.setTimeout(timeout)
+
 
     
     def end(self):
@@ -497,22 +506,32 @@ class creator:
         @param otr: OtrHandler
         @type  otr: OtrHandler Instanz
         """
+        if self._xbmcaddon.getSetting('otrAskSchedule') == 'true': ask = True
+        if self._xbmcaddon.getSetting('otrAskSchedule') == 'false': ask = False
         if not ask or xbmcgui.Dialog().yesno(__TITLE__, _(self._xbmcaddon, 'schedule job?')):
             res = otr.scheduleJob(parse_qs(self._url.query)['epgid'].pop())
             if len(res) > 0:
-                xbmcgui.Dialog().ok(__TITLE__, _(self._xbmcaddon, "scheduleJob: %s" % res))
-        return None
+                xbmc.executebuiltin('Notification("%s", "%s")' % (
+                    __TITLE__, 
+                    _(self._xbmcaddon, "scheduleJob: %s" % res) ) )
+            return True
 
-    def _deleteJob(self, otr):
+    def _deleteJob(self, otr, ask=True):
         """
         aufnahme loeschen
 
         @param otr: OtrHandler
         @type  otr: OtrHandler Instanz
         """
-        print(otr.deleteJob( parse_qs(self._url.query)['epgid'].pop() ))
-        xbmc.executebuiltin("Container.Refresh")
-        return []
+        if self._xbmcaddon.getSetting('otrAskDelete') == 'true': ask = True
+        if self._xbmcaddon.getSetting('otrAskDelete') == 'false': ask = False
+        if not ask or xbmcgui.Dialog().yesno(__TITLE__, _(self._xbmcaddon, 'delete job?')):
+            otr.deleteJob( parse_qs(self._url.query)['epgid'].pop() )
+            xbmc.executebuiltin("Container.Refresh")
+            xbmc.executebuiltin('Notification("%s", "%s")' % (
+                __TITLE__, 
+                _(self._xbmcaddon, "job deleted") ) )
+            return True
 
     def _showUserinfo(self, otr):
         """
