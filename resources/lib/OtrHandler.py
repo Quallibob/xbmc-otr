@@ -401,7 +401,6 @@ class OtrHandler:
 
 
     def setTimeout(self, timeout=90):
-        print "set timeout to %s " % timeout
         return socket.setdefaulttimeout(timeout)
 
     def __init__(self, did=False, authcode=False, sockettimeout=90):
