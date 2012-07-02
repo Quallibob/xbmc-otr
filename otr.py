@@ -12,10 +12,11 @@ import sys
 import xbmcplugin
 import xbmcaddon
 
+
 #set our library path
 sys.path.insert(0, xbmc.translatePath( 
 	os.path.join( 
-		xbmcaddon.Addon(id=sys.argv[0]).getAddonInfo('path'), 
+		xbmcaddon.Addon().getAddonInfo('path'), 
 		'resources', 
 		'lib' ) ) )
 

@@ -9,13 +9,17 @@
 -->
 <addon id="plugin.video.onlinetvrecorder_com" version="0.3" name="onlinetvrecorder.com" provider-name="Frank Epperlein">
   <extension point="xbmc.python.pluginsource" library="otr.py">
-	<provides>video</provides>
+    <provides>video</provides>
   </extension> 
   <extension point="xbmc.addon.metadata">
-	<summary>onlinetvrecorder.com integration</summary>
-	<summary lang="de">onlinetvrecorder.com integration</summary>
-	<description>Will provide the ability to show onlinetvrecorder.com recordings within XBMC.</description>
-	<description lang="de">Ermoeglicht es Aufnahmen von onlinetvrecorder.com in XBMC anzuschauen.</description>
-	<platform>all</platform>
+    <summary>onlinetvrecorder.com integration</summary>
+    <summary lang="de">onlinetvrecorder.com integration</summary>
+    <description>Will provide the ability to show onlinetvrecorder.com recordings within XBMC.</description>
+    <description lang="de">Ermoeglicht es Aufnahmen von onlinetvrecorder.com in XBMC anzuschauen.</description>
+    <platform>all</platform>
   </extension> 
+  <requires>
+   <import addon="xbmc.python" version="2.0"/>
+   <import addon="script.common.plugin.cache" version="0.9.1"/> 
+  </requires>
 </addon>
