@@ -7,7 +7,7 @@
     License    : Gnu General Public License 2
     Description: XBMC Addon for OTR integration
 -->
-<addon id="plugin.video.onlinetvrecorder_com" version="0.3" name="onlinetvrecorder.com" provider-name="Frank Epperlein">
+<addon id="plugin.video.onlinetvrecorder_com" version="0.4" name="onlinetvrecorder.com" provider-name="Frank Epperlein">
   <extension point="xbmc.python.pluginsource" library="otr.py">
     <provides>video</provides>
   </extension> 
