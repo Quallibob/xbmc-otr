@@ -324,22 +324,19 @@ class OtrHandler:
             downloadinfo = json.loads(ret)
             return downloadinfo
 
-        print "#1"
         downloadinfo = getDownloadinfo(fileuri)
         if ('reservation_filename' in downloadinfo and
             'reservation_cancellink' in downloadinfo):
+            print "canceling existing reservation"
             self.__getUrl(downloadinfo['reservation_cancellink'])
             downloadinfo = getDownloadinfo(fileuri)
 
-        print "#2"
         if 'filedownloadlink' in downloadinfo:
             return downloadinfo['filedownloadlink']
 
-        print "#3"
         if 'queueposition' in downloadinfo:
             raise self.inDownloadqueueException('in downloadqueue', int(downloadinfo['queueposition']))
         
-        print '#4'
         if 'error' in downloadinfo:
             number = downloadinfo['error']
             message = ""
@@ -347,7 +344,8 @@ class OtrHandler:
                  message = downloadinfo['message']
             raise self.foundDownloadErrorException(number, message)
 
-        print "#5"
+        print("download processing failed")
+        print(downloadinfo)
         return False
 
         
