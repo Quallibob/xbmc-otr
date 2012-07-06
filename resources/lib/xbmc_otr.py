@@ -380,7 +380,9 @@ class creator:
             
             selection = []
             for stream in elementinfo.keys():
-                # TODO je anch option "if in preselectable"
+                if not self._xbmcaddon.getSetting('otrShowUnspported') == 'true':
+                    if not stream in preselectable:
+                        continue
                 streaminfo = aggrstreaminfo(
                                 getKey(elementinfo, stream),
                                 epgid )
