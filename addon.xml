@@ -14,7 +14,7 @@
   <extension point="xbmc.addon.metadata">
     <summary>onlinetvrecorder.com integration</summary>
     <summary lang="de">onlinetvrecorder.com integration</summary>
-    <description>Will provide the ability to show onlinetvrecorder.com recordings within XBMC.</description>
+    <description>Provides the ability to show onlinetvrecorder.com recordings within XBMC.</description>
     <description lang="de">Ermoeglicht es Aufnahmen von onlinetvrecorder.com in XBMC anzuschauen.</description>
     <platform>all</platform>
   </extension> 

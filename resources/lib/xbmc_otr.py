@@ -90,7 +90,7 @@ def _(x, s):
         'userinfo': 30308,
         'status: %s (until %s)': 30309,
         'decodings left: %s, gwp left: %s': 30310,
-        'loading recording list failed (%s)': 30311,
+        'loading recording list failed': 30311,
         'new version available': 30312,
         'search': 30313,
         'scheduling': 30314,
@@ -106,6 +106,7 @@ def _(x, s):
         'delete job?': 30324,
         'job deleted': 30325,
         'refresh element': 30326,
+        'stream select': 30327,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -280,33 +281,51 @@ class creator:
                 if 'BEGIN' in element: infos['date'] = element['BEGIN']
                 if 'TITLE2' in element: infos['plot'] += "\n%s" % element['TITLE2']
 
+                streamlist = {}
+                for stream in stream_selection:
+                    streamlist[stream['name']] = stream['uri']
+                streamlist = base64.urlsafe_b64encode(repr(streamlist))
+
                 # contextmenue
-                contextmenueitems = [
-                      ( _(self._xbmcaddon, 'play'), 
-                        "PlayWith()" ),
-                      ( _(self._xbmcaddon, 'delete'), 
+                contextmenueitems = []
+                contextmenueitems.append (tuple(( 
+                        _(self._xbmcaddon, 'play'), 
+                        "PlayWith()" )))
+                contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'stream select'), 
+                        "XBMC.RunPlugin(%s://%s/%s?list=%s&file=%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'streamselect',
+                            streamlist,
+                            base64.urlsafe_b64encode(element['FILENAME'])) )))
+                contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'delete'), 
                         "XBMC.RunPlugin(%s://%s/%s?epgid=%s)" % (
                             self._url.scheme,
                             self._url.netloc,
                             'deletejob',
-                            element['EPGID']), ),
-                      ( _(self._xbmcaddon, 'refresh listing'),
+                            element['EPGID']) )))
+                contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'refresh listing'),
                         "XBMC.RunPlugin(%s://%s/%s)" % (
                             self._url.scheme,
                             self._url.netloc,
-                            'cleancache'), ),
-                      ( _(self._xbmcaddon, 'refresh element'),
+                            'cleancache') )))
+                contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'refresh element'),
                         "XBMC.RunPlugin(%s://%s/%s?search=%%25%s)" % (
                             self._url.scheme,
                             self._url.netloc,
                             'cleancache',
-                            element['EPGID']), ),
-                      ( _(self._xbmcaddon, 'userinfo'), 
+                            element['EPGID']) )))
+                contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'userinfo'), 
                         "XBMC.RunPlugin(%s://%s/%s)" % (
                             self._url.scheme,
                             self._url.netloc,
-                            'userinfo' ),)
-                     ]
+                            'userinfo' ) )))
+
                 # cache object
                 cache.set(cachekey, repr([elementuri, basicitem, infos, contextmenueitems]))
 
@@ -320,7 +339,7 @@ class creator:
         def getStreamSelection(elementinfo, epgid):
 
 
-            def aggrstreaminfo(streamelement, epgid):
+            def aggrstreaminfo(streamelement, epgid, playurl=True):
                 if  self._xbmcaddon.getSetting('otrPreferPrio') == 'true':
                     stype = ( (getKey(streamelement, 'PRIO') and 'PRIO') or
                               (getKey(streamelement, 'FREE') and 'FREE') or False )
@@ -332,14 +351,19 @@ class creator:
                 size = getKey(streamelement, 'SIZE')
                 rsize = getSizeStr(long(size)*1024)
                 fileuri  = getKey(streamelement, stype)
-                uri = "%s://%s/%s?fileuri=%s&epgid=%s" % (
-                    self._url.scheme,
-                    self._url.netloc,
-                    'play',
-                    base64.urlsafe_b64encode(fileuri),
-                    epgid)
+                if playurl:
+                    uri = "%s://%s/%s?fileuri=%s&epgid=%s" % (
+                        self._url.scheme,
+                        self._url.netloc,
+                        "play",
+                        base64.urlsafe_b64encode(fileuri),
+                        epgid)
+                else:
+                    uri = fileuri
                 gwp  = getKey(streamelement, 'GWPCOSTS', stype)
-                name = "%s, %s" % (stream.replace('_', ' '), rsize)
+                name = "%s, %s, %s GWP" % (stream.replace('_', ' '), rsize, gwp)
+                if not self._xbmcaddon.getSetting('otrShowUnspported') == 'true':
+                    name = name.replace('unkodiert', '')
                 
                 return {
                     'uri':uri,
@@ -353,7 +377,7 @@ class creator:
 
 
             # streamvorauswahl nach den einsellungen
-            preselectable = ['MP4_Stream', 'MP4']
+            preselectable = ['MP4_Stream', 'MP4_unkodiert']
             if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
                 preselectable.append('AVI_unkodiert')
             if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
@@ -381,11 +405,11 @@ class creator:
             selection = []
             for stream in elementinfo.keys():
                 if not self._xbmcaddon.getSetting('otrShowUnspported') == 'true':
-                    if not stream in preselectable:
-                        continue
+                    if not stream in preselectable: continue
                 streaminfo = aggrstreaminfo(
                                 getKey(elementinfo, stream),
-                                epgid )
+                                epgid,
+                                playurl=False )
                 if streaminfo:
                     selection.append( streaminfo )
 
@@ -412,7 +436,8 @@ class creator:
             prdialog.close()
             xbmcgui.Dialog().ok(
                     __TITLE__, 
-                    _(self._xbmcaddon, 'loading recording list failed (%s)' % str(e)) )
+                    _(self._xbmcaddon, 'loading recording list failed'),
+                    str(e) )
             return []
         else:
             listing = []
@@ -644,17 +669,33 @@ class creator:
         return []
 
 
-    def _play(self, otr):
+    def _selectStream(self, otr):
+        """
+        aufnahme loeschen
+
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
+        """
+        streamlist = eval(base64.urlsafe_b64decode(parse_qs(self._url.query)['list'].pop()))
+        filename = base64.urlsafe_b64decode(parse_qs(self._url.query)['file'].pop())
+        choice = xbmcgui.Dialog().select(filename, streamlist.keys())
+        if choice >= 0:
+            uri = streamlist[streamlist.keys()[choice]]
+            self._play(otr, uri) #executebuiltin("RunScript(%s)" % uri, True)
+        return True
+
+    def _play(self, otr, requesturi=False):
         queuemax = 0;
         prdialog = xbmcgui.DialogProgress()
         prdialog.create(_(self._xbmcaddon, 'downloadqueue'))
         prdialog.update(0)
 
-        if not 'fileuri' in parse_qs(self._url.query):
-            raise Exception('play without fileuri not possible')
-            return False
-        else:
-            requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
+        if not requesturi:
+            if not 'fileuri' in parse_qs(self._url.query):
+                raise Exception('play without fileuri not possible')
+                return False
+            else:
+                requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
 
         if 'epgid' in parse_qs(self._url.query):
             egid = parse_qs(self._url.query)['epgid'].pop()
@@ -710,6 +751,7 @@ class creator:
                 'deletejob': self._deleteJob,
                 'schedulejob': self._scheduleJob,
                 'userinfo': self._showUserinfo,
+                'streamselect': self._selectStream,
                 'play': self._play,
                 'cleancache': self._cleanCache,
                 }
