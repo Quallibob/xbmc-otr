@@ -5,7 +5,8 @@
     <string id="30101">E-Mail-Adresse</string>
     <string id="30102">Passwort</string>
     <string id="30103">Timeout (in Sekunden)</string>
-    <string id="30103">Vor dem Löschen von Aufträgen fragen</string>
+    <string id="30104">Vor dem Anlegen von Aufträgen fragen</string>
+    <string id="30105">Vor dem Löschen von Aufträgen fragen</string>
     <!-- Addon Quality Settings -->
     <string id="30200">Qualität</string>
     <string id="30201">HD Version in der Vorauswahl bevorzugen</string>
