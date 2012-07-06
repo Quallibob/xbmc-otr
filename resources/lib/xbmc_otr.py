@@ -42,6 +42,10 @@ except:
     cache = StorageServer.StorageServer(__TITLE__)
 #cache.dbg = True
 
+def pprint(s):
+    import pprint
+    xbmc.log(pprint.pformat(s))
+
 def getKey(obj, *elements):
     for element in elements:
         if element in obj:
@@ -217,7 +221,7 @@ class creator:
         @return list
         """
 
-        def getListItemFromElement(element, fileinfo):
+        def getListItemFromElement(element):
             """
             generiert xbmcgui.ListItem fuer ein element
 
@@ -237,129 +241,161 @@ class creator:
                 url += '____'
                 return url
 
-            label = element['TITLE']
-            if 'BEGIN' in element:
-                # zeitangabe vorhanden
-                label += " (%s)" % element['BEGIN']
+
+            cachekey = 'epgid_%s' % element['EPGID']
+            try:
+                elementuri, basicitem, infos, contextmenueitems = eval(cache.get(cachekey))
+            except Exception, e:
+                cache.delete(cachekey)
+                elementinfo = otr.getFileInfoDict(element['EPGID'])
+                streaminfo = getStreamSelection(elementinfo, element['EPGID'])
+                stream_preselect, stream_selection = streaminfo
+
+                elementuri = stream_preselect['uri']
+                label = element['TITLE']
+                if 'BEGIN' in element:
+                    # zeitangabe vorhanden
+                    label += " (%s)" % element['BEGIN']
+
+                # item basic infos
+                basicitem = {
+                    'label': label,
+                    'label2': element['FILENAME'],
+                    'iconImage': '%s1.jpg' % getImageUrl(element['FILENAME']),
+                    'thumbnailImage': '%sA.jpg' % getImageUrl(element['FILENAME'])
+                    }
+
+                # item detail infos
+                infos= {}
+                infos['size'] = long(stream_preselect['size'])
+                infos['plot'] = "%s GWP (%s, %s, %s)\n" % (
+                    stream_preselect['cost'], 
+                    stream_preselect['type'], 
+                    stream_preselect['stream'].replace('_', ' '),
+                    stream_preselect['rsize'] )
+                if 'DURATION' in element: infos['duration'] = element['DURATION'].split()[0]
+                if 'DOWNLOADCOUNT' in element: infos['playcount'] = int(element['DOWNLOADCOUNT'])
+                if 'TITLE' in element: infos['title'] = element['TITLE']
+                if 'STATION' in element: infos['studio'] = element['STATION']
+                if 'BEGIN' in element: infos['date'] = element['BEGIN']
+                if 'TITLE2' in element: infos['plot'] += "\n%s" % element['TITLE2']
+
+                # contextmenue
+                contextmenueitems = [
+                      ( _(self._xbmcaddon, 'play'), 
+                        "PlayWith()" ),
+                      ( _(self._xbmcaddon, 'delete'), 
+                        "XBMC.RunPlugin(%s://%s/%s?epgid=%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'deletejob',
+                            element['EPGID']), ),
+                      ( _(self._xbmcaddon, 'refresh listing'),
+                        "XBMC.RunPlugin(%s://%s/%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'cleancache'), ),
+                      ( _(self._xbmcaddon, 'refresh element'),
+                        "XBMC.RunPlugin(%s://%s/%s?search=%%25%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'cleancache',
+                            element['EPGID']), ),
+                      ( _(self._xbmcaddon, 'userinfo'), 
+                        "XBMC.RunPlugin(%s://%s/%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'userinfo' ),)
+                     ]
+                # cache object
+                cache.set(cachekey, repr([elementuri, basicitem, infos, contextmenueitems]))
 
             # listelement erzeugen
-            li = xbmcgui.ListItem(
-                label=label,
-                label2=element['FILENAME'],
-                iconImage='%s1.jpg' % getImageUrl(element['FILENAME']),
-                thumbnailImage='%sA.jpg' % getImageUrl(element['FILENAME']) )
-
-            # infos aggregieren
-            infos= {}
-            infos['size'] = long(fileinfo['size'])
-            infos['plot'] = "%s GWP (%s, %s, %s)\n" % (
-                fileinfo['cost'], 
-                fileinfo['type'].replace('_', ' '), 
-                fileinfo['stream'].replace('_', ' '),
-                getSizeStr(infos['size']*1024) )
-            if 'DURATION' in element: infos['duration'] = element['DURATION'].split()[0]
-            if 'DOWNLOADCOUNT' in element: infos['playcount'] = int(element['DOWNLOADCOUNT'])
-            if 'TITLE' in element: infos['title'] = element['TITLE']
-            if 'STATION' in element: infos['studio'] = element['STATION']
-            if 'BEGIN' in element: infos['date'] = element['BEGIN']
-            if 'TITLE2' in element: infos['plot'] += "\n%s" % element['TITLE2']
+            li = xbmcgui.ListItem(**basicitem)
             li.setInfo('video', infos)
+            li.addContextMenuItems(contextmenueitems, replaceItems=True )
+            return elementuri, li, False
 
-            # contextmenue erzeuegen
-            li.addContextMenuItems(
-                [ 
-                  ( _(self._xbmcaddon, 'play'), 
-                    "PlayWith()" ),
-                  ( _(self._xbmcaddon, 'delete'), 
-                    "XBMC.RunPlugin(%s://%s/%s?epgid=%s)" % (
-                        self._url.scheme,
-                        self._url.netloc,
-                        'deletejob',
-                        element['EPGID']), ),
-                  ( _(self._xbmcaddon, 'refresh listing'),
-                    "XBMC.RunPlugin(%s://%s/%s)" % (
-                        self._url.scheme,
-                        self._url.netloc,
-                        'cleancache'), ),
-                  ( _(self._xbmcaddon, 'refresh element'),
-                    "XBMC.RunPlugin(%s://%s/%s?search=%%25%s)" % (
-                        self._url.scheme,
-                        self._url.netloc,
-                        'cleancache',
-                        element['EPGID']), ),
-                  ( _(self._xbmcaddon, 'userinfo'), 
-                    "XBMC.RunPlugin(%s://%s/%s)" % (
-                        self._url.scheme,
-                        self._url.netloc,
-                        'userinfo' ),)
-                ], replaceItems=True )
-
-            return li
+    
+        def getStreamSelection(elementinfo, epgid):
 
 
-        def getFileInfo(element):
+            def aggrstreaminfo(streamelement, epgid):
+                if  self._xbmcaddon.getSetting('otrPreferPrio') == 'true':
+                    stype = ( (getKey(streamelement, 'PRIO') and 'PRIO') or
+                              (getKey(streamelement, 'FREE') and 'FREE') or False )
+                else:
+                    stype = ( (getKey(streamelement, 'FREE') and 'FREE') or
+                              (getKey(streamelement, 'PRIO') and 'PRIO') or False )
+                if not stype: return False
 
-            # streamvorauswahl nach den einsellungen
-            streams = ['MP4_Stream', 'MP4']
-            if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
-                streams.append('AVI_unkodiert')
-            if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
-                streams.insert(0, 'MP4_geschnitten')
-            if self._xbmcaddon.getSetting('otrPreferHQ') == 'true':
-                if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
-                    streams.insert(0, 'HQAVI_unkodiert')
-                streams.insert(0, 'HQMP4') 
-                streams.insert(0, 'HQMP4_Stream')
-                if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
-                    if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
-                        streams.insert(0, 'HQ_geschnitten')
-                    streams.insert(0, 'HQMP4_geschnitten')
-            if self._xbmcaddon.getSetting('otrPreferHD') == 'true':
-                if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
-                    streams.insert(0, 'HDAVI_unkodiert')
-                streams.insert(0, 'HDMP4') 
-                streams.insert(0, 'HDMP4_Stream')
-                if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
-                    if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
-                        streams.insert(0, 'HD_geschnitten')
-                    streams.insert(0, 'HDMP4_geschnitten')
-
-            # fileinfoDict abfragen
-            cachekey = 'epgid_%s' % element['EPGID']
-            if cache.get(cachekey):
-                elementinfo = eval(cache.get(cachekey))
-            else:
-                elementinfo = otr.getFileInfoDict(element['EPGID'])
-                cache.set(cachekey, repr(elementinfo))
-
-            print element['TITLE'] 
-            print streams
-            print elementinfo.keys()
-            for stream in streams: 
-                if getKey(elementinfo, stream): break
-            print stream
-            if  self._xbmcaddon.getSetting('otrPreferPrio') == 'true':
-                stype = ( (getKey(elementinfo, stream, 'PRIO') and 'PRIO') or
-                          (getKey(elementinfo, stream, 'FREE') and 'FREE') or False )
-            else:
-                stype = ( (getKey(elementinfo, stream, 'FREE') and 'FREE') or
-                          (getKey(elementinfo, stream, 'PRIO') and 'PRIO') or False )
-
-            if not stype: 
-                return False
-            else:
-                size = getKey(elementinfo, stream, 'SIZE')
-                fileuri  = getKey(elementinfo, stream, stype)
+                size = getKey(streamelement, 'SIZE')
+                rsize = getSizeStr(long(size)*1024)
+                fileuri  = getKey(streamelement, stype)
                 uri = "%s://%s/%s?fileuri=%s&epgid=%s" % (
                     self._url.scheme,
                     self._url.netloc,
                     'play',
                     base64.urlsafe_b64encode(fileuri),
-                    element['EPGID'])
-                gwp  = getKey(elementinfo, stream, 'GWPCOSTS', stype)
+                    epgid)
+                gwp  = getKey(streamelement, 'GWPCOSTS', stype)
+                name = "%s, %s" % (stream.replace('_', ' '), rsize)
+                
+                return {
+                    'uri':uri,
+                    'name':name,
+                    'cost': gwp, 
+                    'size': size, 
+                    'rsize': rsize,
+                    'type': stype, 
+                    'stream': stream } 
 
-            # aggergieren und ausliefern
-            return {'uri':uri, 'type': stype, 'cost': gwp, 'size':size, 'stream':stream}
+
+
+            # streamvorauswahl nach den einsellungen
+            preselectable = ['MP4_Stream', 'MP4']
+            if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                preselectable.append('AVI_unkodiert')
+            if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
+                preselectable.insert(0, 'MP4_geschnitten')
+            if self._xbmcaddon.getSetting('otrPreferHQ') == 'true':
+                if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                    preselectable.insert(0, 'HQAVI_unkodiert')
+                preselectable.insert(0, 'HQMP4') 
+                preselectable.insert(0, 'HQMP4_Stream')
+                if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
+                    if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                        preselectable.insert(0, 'HQ_geschnitten')
+                    preselectable.insert(0, 'HQMP4_geschnitten')
+            if self._xbmcaddon.getSetting('otrPreferHD') == 'true':
+                if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                    preselectable.insert(0, 'HDAVI_unkodiert')
+                preselectable.insert(0, 'HDMP4') 
+                preselectable.insert(0, 'HDMP4_Stream')
+                if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
+                    if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                        preselectable.insert(0, 'HD_geschnitten')
+                    preselectable.insert(0, 'HDMP4_geschnitten')
+
+            
+            selection = []
+            for stream in elementinfo.keys():
+                # TODO je anch option "if in preselectable"
+                streaminfo = aggrstreaminfo(
+                                getKey(elementinfo, stream),
+                                epgid )
+                if streaminfo:
+                    selection.append( streaminfo )
+
+            for stream in preselectable: 
+                if getKey(elementinfo, stream): 
+                    break
+            preselectstream = aggrstreaminfo(
+                                getKey(elementinfo, stream),
+                                epgid )
+
+            return preselectstream, selection
+
 
         # progressdialog erzeuegen
         prdialog = xbmcgui.DialogProgress()
@@ -391,14 +427,11 @@ class creator:
                 prdialog.update(percent, element['FILENAME'])
 
                 try:
-                    # fileinfoDict abfragen
-                    fileinfo = getFileInfo(element)
+                # fileinfo abfragen
+                    listing.append(getListItemFromElement(element))
                 except Exception, e:
                     print "getFileInfo failed (%s)" % str(e)
                     xbmc.executebuiltin('Notification("%s", "%s")' % (element['FILENAME'], str(e)))
-                else:
-                    if fileinfo:
-                        listing.append([ fileinfo['uri'], getListItemFromElement(element, fileinfo), False ])
 
             # progressdialog abschliessen
             prdialog.close()
