@@ -299,19 +299,29 @@ class creator:
 
         def getFileInfo(element):
 
-            # streamauswahl
+            # streamvorauswahl nach den einsellungen
             streams = ['MP4_Stream', 'MP4']
+            if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                streams.append('AVI_unkodiert')
             if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
                 streams.insert(0, 'MP4_geschnitten')
             if self._xbmcaddon.getSetting('otrPreferHQ') == 'true':
+                if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                    streams.insert(0, 'HQAVI_unkodiert')
                 streams.insert(0, 'HQMP4') 
                 streams.insert(0, 'HQMP4_Stream')
                 if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
+                    if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                        streams.insert(0, 'HQ_geschnitten')
                     streams.insert(0, 'HQMP4_geschnitten')
             if self._xbmcaddon.getSetting('otrPreferHD') == 'true':
+                if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                    streams.insert(0, 'HDAVI_unkodiert')
                 streams.insert(0, 'HDMP4') 
                 streams.insert(0, 'HDMP4_Stream')
                 if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
+                    if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                        streams.insert(0, 'HD_geschnitten')
                     streams.insert(0, 'HDMP4_geschnitten')
 
             # fileinfoDict abfragen
@@ -322,8 +332,12 @@ class creator:
                 elementinfo = otr.getFileInfoDict(element['EPGID'])
                 cache.set(cachekey, repr(elementinfo))
 
+            print element['TITLE'] 
+            print streams
+            print elementinfo.keys()
             for stream in streams: 
                 if getKey(elementinfo, stream): break
+            print stream
             if  self._xbmcaddon.getSetting('otrPreferPrio') == 'true':
                 stype = ( (getKey(elementinfo, stream, 'PRIO') and 'PRIO') or
                           (getKey(elementinfo, stream, 'FREE') and 'FREE') or False )
