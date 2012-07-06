@@ -26,7 +26,7 @@
     <string id="30308">Benutzerinformationen</string>
     <string id="30309">Status: %s (bis %s)</string>
     <string id="30310">Decodings verfügbar: %s, GWP verfügbar: %s</string>
-    <string id="30311">Laden der Aufnahmeliste fehlgeschlagen (%s)</string>
+    <string id="30311">Laden der Aufnahmeliste fehlgeschlagen.</string>
     <string id="30312">Neue Addon-Version Verfügbar! Update auf http://j.mp/xbmc-otr ...</string>
     <string id="30313">Suche</string>
     <string id="30314">Planung</string>
@@ -42,4 +42,5 @@
     <string id="30324">Auftrag Löschen?</string>
     <string id="30325">Auftrag gelöscht</string>
     <string id="30326">Auftrag aktualisieren</string>
+    <string id="30327">Streamauswahl</string>
 </strings>
