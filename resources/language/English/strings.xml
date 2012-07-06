@@ -9,10 +9,12 @@
     <string id="30105">Ask before deleting Jobs</string>
     <!-- Addon Quality Settings -->
     <string id="30200">Quality</string>
-    <string id="30201">Prefer HD version</string>
-    <string id="30202">Prefer HQ version</string>
-    <string id="30203">Prefer cut version</string>
+    <string id="30201">Prefer HD version in preselection</string>
+    <string id="30202">Prefer HQ version in preselection</string>
+    <string id="30203">Prefer cut version in preselection</string>
     <string id="30204">Prefer Priority-Download</string>
+    <string id="30205">Include AVI-files in preselection</string>
+    <string id="30206">Show unsupported formats (NOT recommend)</string>
     <!-- Message strings -->
     <string id="30300">Please set your OTR login in Addon Setup</string>
     <string id="30301">OTR Login Failed (%s)</string>
