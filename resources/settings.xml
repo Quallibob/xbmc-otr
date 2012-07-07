@@ -25,6 +25,6 @@
         <setting type="sep" />
         <setting id="otrPreferPrio" type="bool" default="false" label="30204" />
         <setting type="sep" />
-        <setting id="otrShowUnspported" type="bool" default="false" label="30206" />
+        <setting id="otrShowUnsupported" type="bool" default="false" label="30206" />
     </category>
 </settings>
