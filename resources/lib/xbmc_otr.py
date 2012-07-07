@@ -283,7 +283,7 @@ class creator:
 
                 streamlist = {}
                 for stream in stream_selection:
-                    streamlist[stream['name']] = stream['uri']
+                    streamlist[stream['name']] = stream['file']
                 streamlist = base64.urlsafe_b64encode(repr(streamlist))
 
                 # contextmenue
@@ -298,7 +298,7 @@ class creator:
                             self._url.netloc,
                             'streamselect',
                             streamlist,
-                            base64.urlsafe_b64encode(element['FILENAME'])) )))
+                            base64.urlsafe_b64encode(label)) )))
                 contextmenueitems.append (tuple((
                         _(self._xbmcaddon, 'delete'), 
                         "XBMC.RunPlugin(%s://%s/%s?epgid=%s)" % (
@@ -339,7 +339,7 @@ class creator:
         def getStreamSelection(elementinfo, epgid):
 
 
-            def aggrstreaminfo(streamelement, epgid, playurl=True):
+            def aggrstreaminfo(streamelement, epgid):
                 if  self._xbmcaddon.getSetting('otrPreferPrio') == 'true':
                     stype = ( (getKey(streamelement, 'PRIO') and 'PRIO') or
                               (getKey(streamelement, 'FREE') and 'FREE') or False )
@@ -351,22 +351,20 @@ class creator:
                 size = getKey(streamelement, 'SIZE')
                 rsize = getSizeStr(long(size)*1024)
                 fileuri  = getKey(streamelement, stype)
-                if playurl:
-                    uri = "%s://%s/%s?fileuri=%s&epgid=%s" % (
+                uri = "%s://%s/%s?fileuri=%s&epgid=%s" % (
                         self._url.scheme,
                         self._url.netloc,
                         "play",
                         base64.urlsafe_b64encode(fileuri),
                         epgid)
-                else:
-                    uri = fileuri
                 gwp  = getKey(streamelement, 'GWPCOSTS', stype)
                 name = "%s, %s, %s GWP" % (stream.replace('_', ' '), rsize, gwp)
                 if not self._xbmcaddon.getSetting('otrShowUnspported') == 'true':
-                    name = name.replace('unkodiert', '')
-                
+                    name = name.replace('unkodiert', '') 
+
                 return {
                     'uri':uri,
+                    'file':fileuri,
                     'name':name,
                     'cost': gwp, 
                     'size': size, 
@@ -404,14 +402,16 @@ class creator:
             
             selection = []
             for stream in elementinfo.keys():
-                if not self._xbmcaddon.getSetting('otrShowUnspported') == 'true':
-                    if not stream in preselectable: continue
                 streaminfo = aggrstreaminfo(
                                 getKey(elementinfo, stream),
-                                epgid,
-                                playurl=False )
-                if streaminfo:
-                    selection.append( streaminfo )
+                                epgid )
+                if not streaminfo: continue
+                if not self._xbmcaddon.getSetting('otrShowUnsupported') == 'true':
+                    # hide unsupported
+                    supportedendings = ['avi', 'mp4', 'mp3']
+                    if 'otrkey' in streaminfo['file']: continue
+                    if not streaminfo['file'].split('.').pop() in supportedendings: continue
+                selection.append( streaminfo )
 
             for stream in preselectable: 
                 if getKey(elementinfo, stream): 
@@ -453,12 +453,13 @@ class creator:
                 if prdialog.iscanceled(): return listing
                 prdialog.update(percent, element['FILENAME'])
 
-                try:
-                # fileinfo abfragen
-                    listing.append(getListItemFromElement(element))
-                except Exception, e:
-                    print "getFileInfo failed (%s)" % str(e)
-                    xbmc.executebuiltin('Notification("%s", "%s")' % (element['FILENAME'], str(e)))
+                listing.append(getListItemFromElement(element))
+                #try:
+                ## fileinfo abfragen
+                #    listing.append(getListItemFromElement(element))
+                #except Exception, e:
+                #    print "getFileInfo failed (%s)" % str(e)
+                #    xbmc.executebuiltin('Notification("%s", "%s")' % (element['FILENAME'], str(e)))
 
             # progressdialog abschliessen
             prdialog.close()
