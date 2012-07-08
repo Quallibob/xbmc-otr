@@ -337,9 +337,25 @@ class creator:
 
     
         def getStreamSelection(elementinfo, epgid):
+            """
+            aggregiert die informationen der verfuegbaren streams
+            
+            @param streamelement: stream xml struktur die von otr kommt
+            @type  streamelement: dict
+            @param epgid: epgid der  aufnahme
+            @type  epgid: string
+            """
 
 
             def aggrstreaminfo(streamelement, epgid):
+                """
+                aggregiert die informationen eines einzelnen streams
+                
+                @param streamelement: stream xml struktur die von otr kommt
+                @type  streamelement: dict
+                @param epgid: epgid der  aufnahme
+                @type  epgid: string
+                """
                 if  self._xbmcaddon.getSetting('otrPreferPrio') == 'true':
                     stype = ( (getKey(streamelement, 'PRIO') and 'PRIO') or
                               (getKey(streamelement, 'FREE') and 'FREE') or False )
@@ -358,7 +374,7 @@ class creator:
                         base64.urlsafe_b64encode(fileuri),
                         epgid)
                 gwp  = getKey(streamelement, 'GWPCOSTS', stype)
-                name = "%s, %s, %s GWP" % (stream.replace('_', ' '), rsize, gwp)
+                name = "%s, %s, %s GWP" % (stream.replace('_', ' ').strip(), rsize, gwp)
                 if not self._xbmcaddon.getSetting('otrShowUnspported') == 'true':
                     name = name.replace('unkodiert', '') 
 
@@ -453,13 +469,12 @@ class creator:
                 if prdialog.iscanceled(): return listing
                 prdialog.update(percent, element['FILENAME'])
 
-                listing.append(getListItemFromElement(element))
-                #try:
-                ## fileinfo abfragen
-                #    listing.append(getListItemFromElement(element))
-                #except Exception, e:
-                #    print "getFileInfo failed (%s)" % str(e)
-                #    xbmc.executebuiltin('Notification("%s", "%s")' % (element['FILENAME'], str(e)))
+                try:
+                    # fileinfo abfragen
+                    listing.append(getListItemFromElement(element))
+                except Exception, e:
+                    print "getFileInfo failed (%s)" % str(e)
+                    xbmc.executebuiltin('Notification("%s", "%s")' % (element['FILENAME'], str(e)))
 
             # progressdialog abschliessen
             prdialog.close()
