@@ -300,13 +300,6 @@ class creator:
                             streamlist,
                             base64.urlsafe_b64encode(label)) )))
                 contextmenueitems.append (tuple((
-                        _(self._xbmcaddon, 'delete'), 
-                        "XBMC.RunPlugin(%s://%s/%s?epgid=%s)" % (
-                            self._url.scheme,
-                            self._url.netloc,
-                            'deletejob',
-                            element['EPGID']) )))
-                contextmenueitems.append (tuple((
                         _(self._xbmcaddon, 'refresh listing'),
                         "XBMC.RunPlugin(%s://%s/%s)" % (
                             self._url.scheme,
@@ -318,6 +311,13 @@ class creator:
                             self._url.scheme,
                             self._url.netloc,
                             'cleancache',
+                            element['EPGID']) )))
+                contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'delete'), 
+                        "XBMC.RunPlugin(%s://%s/%s?epgid=%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'deletejob',
                             element['EPGID']) )))
                 contextmenueitems.append (tuple((
                         _(self._xbmcaddon, 'userinfo'), 
@@ -374,14 +374,17 @@ class creator:
                         base64.urlsafe_b64encode(fileuri),
                         epgid)
                 gwp  = getKey(streamelement, 'GWPCOSTS', stype)
-                name = "%s, %s, %s GWP" % (stream.replace('_', ' ').strip(), rsize, gwp)
+                name = stream
                 if not self._xbmcaddon.getSetting('otrShowUnspported') == 'true':
-                    name = name.replace('unkodiert', '') 
+                    name = name.replace('unkodiert', '')
+                name = name.replace('_', ' ').strip()
+                name += ", %s" % rsize
+                name += ", %s GWP" % gwp
 
                 return {
-                    'uri':uri,
-                    'file':fileuri,
-                    'name':name,
+                    'uri': uri,
+                    'file': fileuri,
+                    'name': name,
                     'cost': gwp, 
                     'size': size, 
                     'rsize': rsize,

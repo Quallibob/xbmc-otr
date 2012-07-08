@@ -21,7 +21,7 @@
     <string id="30302">Lade Aufnahmeliste</string>
     <string id="30303">Aufnahmen</string>
     <string id="30304">Archiv</string>
-    <string id="30305">Löschen</string>
+    <string id="30305">Aufnahme Löschen</string>
     <string id="30306">Abspielen</string>
     <string id="30307">Auflistung aktualisieren</string>
     <string id="30308">Benutzerinformationen</string>
@@ -42,6 +42,6 @@
     <string id="30323">Nächster Versuch in %s Sekunden.</string>
     <string id="30324">Auftrag Löschen?</string>
     <string id="30325">Auftrag gelöscht</string>
-    <string id="30326">Auftrag aktualisieren</string>
+    <string id="30326">Aufnahme aktualisieren</string>
     <string id="30327">Streamauswahl</string>
 </strings>
