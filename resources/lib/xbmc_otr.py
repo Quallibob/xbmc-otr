@@ -276,6 +276,7 @@ class creator:
                 streaminfo = getStreamSelection(elementinfo, element['EPGID'])
                 stream_preselect, stream_selection = streaminfo
 
+                if not stream_preselect: return False
                 elementuri = stream_preselect['uri']
                 label = element['TITLE']
                 if 'BEGIN' in element:
@@ -380,6 +381,7 @@ class creator:
                 @param epgid: epgid der  aufnahme
                 @type  epgid: string
                 """
+                if not streamelement: return False
                 if  self._xbmcaddon.getSetting('otrPreferPrio') == 'true':
                     stype = ( (getKey(streamelement, 'PRIO') and 'PRIO') or
                               (getKey(streamelement, 'FREE') and 'FREE') or False )
@@ -498,10 +500,12 @@ class creator:
 
                 try:
                     # fileinfo abfragen
-                    listing.append(getListItemFromElement(element))
+                    litem = getListItemFromElement(element)
                 except Exception, e:
                     print "getFileInfo failed (%s)" % str(e)
                     xbmc.executebuiltin('Notification("%s", "%s")' % (element['FILENAME'], str(e)))
+                else:
+                    if litem: listing.append(litem)
 
             # progressdialog abschliessen
             prdialog.close()
