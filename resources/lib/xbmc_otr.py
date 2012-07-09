@@ -131,6 +131,27 @@ class housekeeper:
         self._url = url
         self._xbmcaddon = xbmcaddon.Addon(id=url.netloc)
 
+
+    def __autoclearCache(self):
+        settings = [
+            'otrUsername',
+            'otrPreferPrio',
+            'otrShowUnspported',
+            'otrAcceptAVI',
+            'otrPreferCut',
+            'otrPreferHQ', 
+            'otrPreferHD' ]
+        identstring = "0.1" #cacheversion
+        for setting in settings:
+            if self._xbmcaddon.getSetting(setting):
+                identstring += "#%s:%s" % (setting, self._xbmcaddon.getSetting(setting))
+        if not cache.get('settings') == base64.urlsafe_b64encode(identstring):
+            print "forced cache refresh"
+            cache.delete('%')
+            cache.set('settings', base64.urlsafe_b64encode(identstring))
+
+
+
     def getOTR(self):
         """
         Liefert die geladene OTR instanz zurueck.
@@ -144,6 +165,9 @@ class housekeeper:
         """
         Run the startup
         """
+
+        # clean cache
+        self.__autoclearCache()
 
         # login infos auslesen
         username = self._xbmcaddon.getSetting('otrUsername')
