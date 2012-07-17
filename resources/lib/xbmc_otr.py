@@ -593,16 +593,6 @@ class creator:
         """
         return self._createList(otr, 'recordings')
 
-    def _createArchiveList(self, otr): 
-        """
-        wrapper um createList fuer archive aufzurufen
-
-        @param otr: OtrHandler
-        @type  otr: OtrHandler Instanz
-        """
-        return self._createList(otr, 'archive')
-    
-
     def _createFutureSearchList(self, otr): 
         """
         wrapper um createSearchList fuer die Zukunft aufzurufen
@@ -831,13 +821,12 @@ class creator:
         @type  otr: OtrHandler Instanz
         """
         path =  {
-                '': ['recordings', 'archive', 'scheduling'],
+                '': ['recordings', 'scheduling'],
                 'scheduling' : ['searchpast', 'searchfuture', 'pasthighlights'],
                 'scheduling/searchpast': self._createPastSearchList,
                 'scheduling/searchfuture': self._createFutureSearchList,
                 'scheduling/pasthighlights': self._createPastHightlightsList,
                 'recordings': self._createRecordingList,
-                'archive': self._createArchiveList,
                 'deletejob': self._deleteJob,
                 'schedulejob': self._scheduleJob,
                 'userinfo': self._showUserinfo,
