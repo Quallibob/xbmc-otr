@@ -16,12 +16,18 @@ import xbmc
 import xbmcplugin
 import xbmcaddon
 import xbmcgui
-import CommonFunctions
 import OtrHandler
 import logging
 import urllib
 import base64
 import time
+
+try:
+    import CommonFunctions
+except ImportError, e:
+    # local copy version from http://hg.tobiasussing.dk/hgweb.cgi/commonxbmc/ for apple tv integration
+    import LocalCommonFunctions as CommonFunctions
+    print "LocalCommonFunctions loaded"
 
 try:
     from cgi import parse_qs
@@ -34,12 +40,48 @@ __TITLE__ = 'onlinetvrecorder.com'
 __THUMBURL__ = 'http://thumbs.onlinetvrecorder.com/'
 
 
+class StorageServerDummy:
+
+    dbg = False
+
+    def cacheFunction(*args):
+        return ""
+
+    def delete(*args):
+        return ""
+
+    def set(*args):
+        return ""
+
+    def get(*args):
+        return False
+
+    def setMulti(*args):
+        return ""
+
+    def getMulti(*args):
+        return False
+
+    def lock(*args):
+        return False
+
+    def unlock(*arg):
+        return False
+
+
 try:
     import StorageServer
     cache = StorageServer.StorageServer(__TITLE__, 7)
-except:
-    import storageserverdummy as StorageServer
-    cache = StorageServer.StorageServer(__TITLE__)
+except Exception, e:
+    try:
+    	# local copy version from http://hg.tobiasussing.dk/hgweb.cgi/cachexbmc/ for apple tv integration
+        import LocalStorageServer as StorageServer
+        cache = StorageServer.StorageServer(__TITLE__, 7)
+        print "LocalStorageServer loaded"
+    except Exception, e: 
+        cache = StorageServerDummy()
+        print "StorageServerDummy loaded (%s)" % e
+
 #cache.dbg = True
 
 def pprint(s):
