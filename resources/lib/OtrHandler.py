@@ -17,7 +17,11 @@ import os
 import XmlDict
 import base64
 import socket
-from xml.etree import ElementTree
+
+try:
+    from xml.etree import ElementTree
+except ImportError:
+    import ElementTree
 
 try: import simplejson as json
 except ImportError: import json
@@ -116,7 +120,7 @@ class OtrHandler:
         @param url: url to request
         @type  url: string
         """
-        print url
+        print url.replace(self.__lastPassword, 'X'*len(self.__lastPassword))
         req = self.__url_request(url)
         req.add_header('User-Agent', 'XBMC OtrHandler')
         resp = self.__url_urlopen(req)
@@ -159,6 +163,8 @@ class OtrHandler:
         @param password: user password
         @type  password: string
         """
+        self.__lastUsername = email
+        self.__lastPassword = password
         requrl = "%s/downloader/api/login.php?" % URL_OTR
         requrl += self.__apiauth
         requrl += "&email=%s&pass=%s" % ( urllib.quote(email), urllib.quote(password) )
@@ -167,8 +173,6 @@ class OtrHandler:
         if len(resp) and ' ' in resp:
             raise Exception(resp)
         else:
-            self.__lastUsername = email
-            self.__lastPassword = password
             if self.__url_cookiepath:
                 try:
                     self.__url_cookie.save(self.__url_cookiepath)
@@ -211,9 +215,10 @@ class OtrHandler:
         """
         lst = self.getRecordList(*args, **kwargs)
         try:
-            return self.__getXMLDict( lst )
+            return self.__getXMLDict(lst)
         except Exception, e:
-            raise Exception(lst)
+            print str('tree="""%s"""\n' % lst)
+            raise Exception(e)
         
     def getRecordList(self, 
             showonly="recordings",

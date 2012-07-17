@@ -277,7 +277,7 @@ class creator:
                 stream_preselect, stream_selection = streaminfo
 
                 if not stream_preselect: return False
-                elementuri = stream_preselect['uri']
+                elementuri = "%s" % stream_preselect['uri']
                 label = element['TITLE']
                 if 'BEGIN' in element:
                     # zeitangabe vorhanden
@@ -733,6 +733,7 @@ class creator:
 
     def _play(self, otr, requesturi=False):
         queuemax = 0;
+        xbmc.executebuiltin("Dialog.Close(all,true)", True)
         prdialog = xbmcgui.DialogProgress()
         prdialog.create(_(self._xbmcaddon, 'downloadqueue'))
         prdialog.update(0)
@@ -751,9 +752,9 @@ class creator:
         while True:
             try:
                 fileuri = otr.getFileDownload(requesturi)
-                print "got url %s" % fileuri
                 prdialog.close()
-                xbmc.executebuiltin("PlayMedia(%s)" % fileuri)
+                print "got url %s" % fileuri
+                xbmc.executebuiltin("XBMC.PlayMedia(\"%s\")" % fileuri, True)
                 return True
             except otr.inDownloadqueueException, e:
                 if e.position > queuemax:
