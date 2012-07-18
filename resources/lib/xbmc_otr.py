@@ -191,6 +191,12 @@ class housekeeper:
             print "forced cache refresh"
             cache.delete('%')
             cache.set('settings', base64.urlsafe_b64encode(identstring))
+        if cache.get('otrsubcode') and cache.get('otrsubcode_refreshtime'):
+            if ( int(cache.get('otrsubcode_refreshtime')) < int(time.time() - 60) or
+                 int(cache.get('otrsubcode_refreshtime')) > int(time.time()) ):
+                print "otrsubcode refresh"
+                cache.delete('otrsubcode')
+                cache.delete('otrsubcode_refreshtime')
 
 
 
@@ -211,6 +217,7 @@ class housekeeper:
         # clean cache
         self.__autoclearCache()
 
+
         # login infos auslesen
         username = self._xbmcaddon.getSetting('otrUsername')
         password = self._xbmcaddon.getSetting('otrPassword')
@@ -224,8 +231,15 @@ class housekeeper:
         try:
             # hanlder instanz laden
             self._otr = OtrHandler.OtrHandler()
+            # subcode caching
+            if cache.get('otrsubcode'):
+                self._otr.setOtrSubcode(cache.get('otrsubcode'))
+            else:
+                cache.set('otrsubcode', self._otr.getOtrSubcode())
+                cache.set('otrsubcode_refreshtime', str(int(time.time())))
+
         except Exception, e:
-            print "login failed (1)"
+            print "login failed (1): %s" % e
             xbmcgui.Dialog().ok(
                 __TITLE__,
                 _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
@@ -239,7 +253,7 @@ class housekeeper:
                 self._otr.setCookie(coockie)
                 self._otr.login(username, password)
             except Exception, e:
-                print "login failed (2)"
+                print "login failed (2): %s" % e
                 xbmcgui.Dialog().ok(
                     __TITLE__,
                     _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
