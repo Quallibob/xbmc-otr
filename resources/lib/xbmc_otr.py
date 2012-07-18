@@ -690,7 +690,12 @@ class creator:
         if self._xbmcaddon.getSetting('otrAskSchedule') == 'true': ask = True
         if self._xbmcaddon.getSetting('otrAskSchedule') == 'false': ask = False
         if not ask or xbmcgui.Dialog().yesno(__TITLE__, _(self._xbmcaddon, 'schedule job?')):
+            prdialog = xbmcgui.DialogProgress()
+            prdialog.create(_(self._xbmcaddon, 'scheduling'))
+            prdialog.update(0)
             res = otr.scheduleJob(parse_qs(self._url.query)['epgid'].pop())
+            prdialog.update(100)
+            prdialog.close()
             if len(res) > 0:
                 xbmc.executebuiltin('Notification("%s", "%s")' % (
                     __TITLE__, 
@@ -722,7 +727,12 @@ class creator:
         if self._xbmcaddon.getSetting('otrAskDelete') == 'true': ask = True
         if self._xbmcaddon.getSetting('otrAskDelete') == 'false': ask = False
         if not ask or xbmcgui.Dialog().yesno(__TITLE__, _(self._xbmcaddon, 'delete job?')):
+            prdialog = xbmcgui.DialogProgress()
+            prdialog.create(_(self._xbmcaddon, 'delete'))
+            prdialog.update(0)
             otr.deleteJob( parse_qs(self._url.query)['epgid'].pop() )
+            prdialog.update(100)
+            prdialog.close()
             xbmc.executebuiltin("Container.Refresh")
             xbmc.executebuiltin('Notification("%s", "%s")' % (
                 __TITLE__, 
