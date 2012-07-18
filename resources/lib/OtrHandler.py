@@ -36,8 +36,11 @@ class OtrHandler:
     OTR Representation
     """
     
-    __session = False
-    __apiauth = ""
+    __session   = False
+    __apiauth   = ""
+    __subcode   = False
+    __otr_did   = False
+    __otr_auth  = False
     __url_cookiepath = False
     __url_cookie     = None
     __url_request    = None
@@ -139,8 +142,14 @@ class OtrHandler:
         return False
 
 
+    def setOtrSubcode(self, subcode):
+        self.__subcode = subcode
+        
+    def getOtrSubcode(self):
+        self.__subcode = self.__getUrl(URL_SUBCODE).read()
+        return self.__subcode
 
-    def setAPIAuthKey(self, did=131, code="%s"):
+    def __setAPIAuthKey(self):
         """
         set internal api access code
 
@@ -149,9 +158,9 @@ class OtrHandler:
         @param code: access code
         @type  code: string
         """
-        subcode = self.__getUrl(URL_SUBCODE).read()
-        checksum = hashlib.md5(code % subcode).hexdigest()
-        self.__apiauth = "&checksum=%s&did=%s" % (checksum, did)
+        if not self.__subcode: self.getOtrSubcode()
+        checksum = hashlib.md5(self.__otr_auth % self.__subcode).hexdigest()
+        self.__apiauth = "&checksum=%s&did=%s" % (checksum, self.__otr_did)
 
 
     def login(self, email, password):
@@ -163,6 +172,7 @@ class OtrHandler:
         @param password: user password
         @type  password: string
         """
+        self.__setAPIAuthKey()
         self.__lastUsername = email
         self.__lastPassword = password
         requrl = "%s/downloader/api/login.php?" % URL_OTR
@@ -440,10 +450,12 @@ class OtrHandler:
             self.setTimeout(sockettimeout)
         self.setCookie()
         if did and authcode:
-            self.setAPIAuthKey(did, authcode)
+            self.__otr_did  = did
+            self.__otr_auth = authcode
         else:
             import pah2Nahbae4cahzihach1aep
-            self.setAPIAuthKey(code=pah2Nahbae4cahzihach1aep.code())
+            self.__otr_auth = pah2Nahbae4cahzihach1aep.code()
+            self.__otr_did  = 131
 
 
 
