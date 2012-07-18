@@ -106,14 +106,15 @@ class OtrHandler:
             self.__url_request = Request
             self.__url_urlopen = urlopen
 
-    def __getXMLDict(self, xml):
+    def __getXMLDict(self, xml, encoding="latin9"):
         """
         parse xml into dict
 
         @param xml: xml data
         @type  xml: string
         """
-        tree = ElementTree.XML(xml)
+        parser = ElementTree.XMLParser(encoding=encoding)
+        tree = ElementTree.XML(xml, parser=parser)
         return XmlDict.XmlDict(tree)
 
     def __getUrl(self, url):
