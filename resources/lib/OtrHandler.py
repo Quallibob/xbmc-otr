@@ -113,8 +113,7 @@ class OtrHandler:
         @param xml: xml data
         @type  xml: string
         """
-        parser = ElementTree.XMLParser(encoding=encoding)
-        tree = ElementTree.XML(xml, parser=parser)
+        itree = ElementTree.XML(xml.decode(encoding).encode('utf8'))
         return XmlDict.XmlDict(tree)
 
     def __getUrl(self, url):
