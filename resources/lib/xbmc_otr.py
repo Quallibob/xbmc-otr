@@ -209,7 +209,7 @@ class housekeeper:
         else:
             raise Exception('otr is None')
 
-    def start(self):
+    def start(self, login=True):
         """
         Run the startup
         """
@@ -227,7 +227,7 @@ class housekeeper:
                _(self._xbmcaddon, 'missing login credentials') )
             raise Exception("missing login credentials")
 
-        # login
+        # otr object
         try:
             # hanlder instanz laden
             self._otr = OtrHandler.OtrHandler()
@@ -237,7 +237,6 @@ class housekeeper:
             else:
                 cache.set('otrsubcode', self._otr.getOtrSubcode())
                 cache.set('otrsubcode_refreshtime', str(int(time.time())))
-
         except Exception, e:
             print "login failed (1): %s" % e
             xbmcgui.Dialog().ok(
@@ -245,21 +244,22 @@ class housekeeper:
                 _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
             sys.exit(0)
         else:
-            try:
-                # eigentlicher login
-                coockie = os.path.join(
-                            xbmc.translatePath('special://temp'), 
-                            '%s%s' % (__TITLE__, '.cookie') )
-                self._otr.setCookie(coockie)
-                self._otr.login(username, password)
-            except Exception, e:
-                print "login failed (2): %s" % e
-                xbmcgui.Dialog().ok(
-                    __TITLE__,
-                    _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
-                sys.exit(0)
-            else:
-                print("otr login successful")
+            if login:
+                try:
+                    # eigentlicher login
+                    coockie = os.path.join(
+                                xbmc.translatePath('special://temp'), 
+                                '%s%s' % (__TITLE__, '.cookie') )
+                    self._otr.setCookie(coockie)
+                    self._otr.login(username, password)
+                except Exception, e:
+                    print "login failed (2): %s" % e
+                    xbmcgui.Dialog().ok(
+                        __TITLE__,
+                        _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
+                    sys.exit(0)
+                else:
+                    print("otr login successful")
 
         try:
             timeout = int(float(self._xbmcaddon.getSetting('otrTimeout')))
