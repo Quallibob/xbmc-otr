@@ -96,7 +96,17 @@ def trace(
 
 
 
-otr = False
+
+offlinerequests = [
+	"cleancache",
+	"scheduling",
+	"scheduling/pasthighlights",
+	"scheduling/searchpast",
+	"scheduling/searchfuture",
+	"streamselect",
+	"play",
+	"",
+	]
 
 try:
     _url = urlparse.urlparse("%s%s#%s" % (sys.argv[0], sys.argv[2], sys.argv[1]))
@@ -106,9 +116,11 @@ try:
     creator = worker.creator(_url)
     sender = worker.sender(_url)
     
-    housekeeper.start()
-    if not otr:
-        otr = housekeeper.getOTR()
+    loginrequired = True
+    if _url.path.strip('/') in offlinerequests:
+        loginrequired = False
+    housekeeper.start(login=loginrequired)
+    otr = housekeeper.getOTR()
     sender.send(creator.get(otr))
     housekeeper.end()
 
