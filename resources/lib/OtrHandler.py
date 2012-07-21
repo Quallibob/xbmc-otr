@@ -17,6 +17,7 @@ import os
 import XmlDict
 import base64
 import socket
+import pprint
 
 try:
     from xml.etree import ElementTree
@@ -126,7 +127,10 @@ class OtrHandler:
         print url.replace(self.__lastPassword, 'X'*len(self.__lastPassword))
         req = self.__url_request(url)
         req.add_header('User-Agent', 'XBMC OtrHandler')
-        resp = self.__url_urlopen(req)
+	try:
+	    resp = self.__url_urlopen(req)
+        except urllib2.URLError, e:
+            raise Exception(pprint.pformat(e))
         return resp
 
     def newVersionAvailable(self):
