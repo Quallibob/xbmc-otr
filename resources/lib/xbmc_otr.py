@@ -122,7 +122,7 @@ def _(x, s):
     """
     translations = {
         'missing login credentials': 30300,
-        'login failed (%s)': 30301,
+        'login failed': 30301,
         'loading recording list': 30302,
         'recordings': 30303,
         'archive': 30304,
@@ -149,6 +149,7 @@ def _(x, s):
         'job deleted': 30325,
         'refresh element': 30326,
         'stream select': 30327,
+        'URLError(timeout(\'timed out\',),)': 30328,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -241,7 +242,8 @@ class housekeeper:
             print "login failed (1): %s" % e
             xbmcgui.Dialog().ok(
                 __TITLE__,
-                _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
+                _(self._xbmcaddon, 'login failed'),  
+                _(self._xbmcaddon, str(e)) )
             sys.exit(0)
         else:
             if login:
@@ -256,7 +258,8 @@ class housekeeper:
                     print "login failed (2): %s" % e
                     xbmcgui.Dialog().ok(
                         __TITLE__,
-                        _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
+                        _(self._xbmcaddon, 'login failed'), 
+                        _(self._xbmcaddon, str(e)) )
                     sys.exit(0)
                 else:
                     print("otr login successful")
@@ -538,7 +541,7 @@ class creator:
             xbmcgui.Dialog().ok(
                     __TITLE__, 
                     _(self._xbmcaddon, 'loading recording list failed'),
-                    str(e) )
+                    _(self._xbmcaddon, str(e)) )
             return []
         else:
             listing = []
