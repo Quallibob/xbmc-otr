@@ -5,26 +5,29 @@
     <string id="30101">E-Mail-Adresse</string>
     <string id="30102">Passwort</string>
     <string id="30103">Timeout (in Sekunden)</string>
-    <string id="30103">Vor dem Löschen von Aufträgen fragen</string>
+    <string id="30104">Vor dem Anlegen von Aufträgen fragen</string>
+    <string id="30105">Vor dem Löschen von Aufträgen fragen</string>
     <!-- Addon Quality Settings -->
     <string id="30200">Qualität</string>
-    <string id="30201">HD Version bevorzugen</string>
-    <string id="30202">HQ Version bevorzugen</string>
-    <string id="30203">Geschnittene Version bevorzugen</string>
+    <string id="30201">HD Version in der Vorauswahl bevorzugen</string>
+    <string id="30202">HQ Version in der Vorauswahl bevorzugen</string>
+    <string id="30203">Geschnittene Version in der Vorauswahl bevorzugen</string>
     <string id="30204">Priority-Download bevorzugen</string>
+    <string id="30205">AVI-Dateien in Vorauswahl einbeziehen</string>
+    <string id="30206">Nicht unterstützte Formate anzeigen (NICHT empfohlen)</string>
     <!-- Message strings -->
     <string id="30300">Bitte konfigurieren sie ihren OTR Zugang im OTR Addon Setup</string>
-    <string id="30301">OTR login Fehlgeschlagen (%s)</string>
+    <string id="30301">OTR login Fehlgeschlagen</string>
     <string id="30302">Lade Aufnahmeliste</string>
     <string id="30303">Aufnahmen</string>
     <string id="30304">Archiv</string>
-    <string id="30305">Löschen</string>
+    <string id="30305">Aufnahme Löschen</string>
     <string id="30306">Abspielen</string>
-    <string id="30307">Auflistung Aktualisieren</string>
+    <string id="30307">Auflistung aktualisieren</string>
     <string id="30308">Benutzerinformationen</string>
     <string id="30309">Status: %s (bis %s)</string>
     <string id="30310">Decodings verfügbar: %s, GWP verfügbar: %s</string>
-    <string id="30311">Laden der Aufnahmeliste fehlgeschlagen (%s)</string>
+    <string id="30311">Laden der Aufnahmeliste fehlgeschlagen.</string>
     <string id="30312">Neue Addon-Version Verfügbar! Update auf http://j.mp/xbmc-otr ...</string>
     <string id="30313">Suche</string>
     <string id="30314">Planung</string>
@@ -39,5 +42,7 @@
     <string id="30323">Nächster Versuch in %s Sekunden.</string>
     <string id="30324">Auftrag Löschen?</string>
     <string id="30325">Auftrag gelöscht</string>
-    <string id="30326">Auftrag aktualisieren</string>
+    <string id="30326">Aufnahme aktualisieren</string>
+    <string id="30327">Streamauswahl</string>
+    <string id="30328">Zeitüberschreitung, bitte probier's später nocheinmal.</string>
 </strings>
