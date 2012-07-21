@@ -29,7 +29,7 @@ except ImportError: import json
 
 URL_OTR="http://www.onlinetvrecorder.com"
 URL_SUBCODE="http://j.mp/otrsubcode"
-VERSION="0.4"
+VERSION="0.5"
 VERSION_CHECK="http://j.mp/otrhandler-version-check"
 
 class OtrHandler:
