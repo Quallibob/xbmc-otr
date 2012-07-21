@@ -16,12 +16,18 @@ import xbmc
 import xbmcplugin
 import xbmcaddon
 import xbmcgui
-import CommonFunctions
 import OtrHandler
 import logging
 import urllib
 import base64
 import time
+
+try:
+    import CommonFunctions
+except ImportError, e:
+    # local copy version from http://hg.tobiasussing.dk/hgweb.cgi/commonxbmc/ for apple tv integration
+    import LocalCommonFunctions as CommonFunctions
+    print "LocalCommonFunctions loaded"
 
 try:
     from cgi import parse_qs
@@ -34,13 +40,53 @@ __TITLE__ = 'onlinetvrecorder.com'
 __THUMBURL__ = 'http://thumbs.onlinetvrecorder.com/'
 
 
+class StorageServerDummy:
+
+    dbg = False
+
+    def cacheFunction(*args):
+        return ""
+
+    def delete(*args):
+        return ""
+
+    def set(*args):
+        return ""
+
+    def get(*args):
+        return False
+
+    def setMulti(*args):
+        return ""
+
+    def getMulti(*args):
+        return False
+
+    def lock(*args):
+        return False
+
+    def unlock(*arg):
+        return False
+
+
 try:
     import StorageServer
     cache = StorageServer.StorageServer(__TITLE__, 7)
-except:
-    import storageserverdummy as StorageServer
-    cache = StorageServer.StorageServer(__TITLE__)
+except Exception, e:
+    try:
+    	# local copy version from http://hg.tobiasussing.dk/hgweb.cgi/cachexbmc/ for apple tv integration
+        import LocalStorageServer as StorageServer
+        cache = StorageServer.StorageServer(__TITLE__, 7)
+        print "LocalStorageServer loaded"
+    except Exception, e: 
+        cache = StorageServerDummy()
+        print "StorageServerDummy loaded (%s)" % e
+
 #cache.dbg = True
+
+def pprint(s):
+    import pprint
+    xbmc.log(pprint.pformat(s))
 
 def getKey(obj, *elements):
     for element in elements:
@@ -76,7 +122,7 @@ def _(x, s):
     """
     translations = {
         'missing login credentials': 30300,
-        'login failed (%s)': 30301,
+        'login failed': 30301,
         'loading recording list': 30302,
         'recordings': 30303,
         'archive': 30304,
@@ -86,7 +132,7 @@ def _(x, s):
         'userinfo': 30308,
         'status: %s (until %s)': 30309,
         'decodings left: %s, gwp left: %s': 30310,
-        'loading recording list failed (%s)': 30311,
+        'loading recording list failed': 30311,
         'new version available': 30312,
         'search': 30313,
         'scheduling': 30314,
@@ -102,6 +148,8 @@ def _(x, s):
         'delete job?': 30324,
         'job deleted': 30325,
         'refresh element': 30326,
+        'stream select': 30327,
+        'URLError(timeout(\'timed out\',),)': 30328,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -126,6 +174,33 @@ class housekeeper:
         self._url = url
         self._xbmcaddon = xbmcaddon.Addon(id=url.netloc)
 
+
+    def __autoclearCache(self):
+        settings = [
+            'otrUsername',
+            'otrPreferPrio',
+            'otrShowUnspported',
+            'otrAcceptAVI',
+            'otrPreferCut',
+            'otrPreferHQ', 
+            'otrPreferHD' ]
+        identstring = "0.1" #cacheversion
+        for setting in settings:
+            if self._xbmcaddon.getSetting(setting):
+                identstring += "#%s:%s" % (setting, self._xbmcaddon.getSetting(setting))
+        if not cache.get('settings') == base64.urlsafe_b64encode(identstring):
+            print "forced cache refresh"
+            cache.delete('%')
+            cache.set('settings', base64.urlsafe_b64encode(identstring))
+        if cache.get('otrsubcode') and cache.get('otrsubcode_refreshtime'):
+            if ( int(cache.get('otrsubcode_refreshtime')) < int(time.time() - 60) or
+                 int(cache.get('otrsubcode_refreshtime')) > int(time.time()) ):
+                print "otrsubcode refresh"
+                cache.delete('otrsubcode')
+                cache.delete('otrsubcode_refreshtime')
+
+
+
     def getOTR(self):
         """
         Liefert die geladene OTR instanz zurueck.
@@ -135,10 +210,14 @@ class housekeeper:
         else:
             raise Exception('otr is None')
 
-    def start(self):
+    def start(self, login=True):
         """
         Run the startup
         """
+
+        # clean cache
+        self.__autoclearCache()
+
 
         # login infos auslesen
         username = self._xbmcaddon.getSetting('otrUsername')
@@ -149,32 +228,41 @@ class housekeeper:
                _(self._xbmcaddon, 'missing login credentials') )
             raise Exception("missing login credentials")
 
-        # login
+        # otr object
         try:
             # hanlder instanz laden
             self._otr = OtrHandler.OtrHandler()
+            # subcode caching
+            if cache.get('otrsubcode'):
+                self._otr.setOtrSubcode(cache.get('otrsubcode'))
+            else:
+                cache.set('otrsubcode', self._otr.getOtrSubcode())
+                cache.set('otrsubcode_refreshtime', str(int(time.time())))
         except Exception, e:
-            print "login failed (1)"
+            print "login failed (1): %s" % e
             xbmcgui.Dialog().ok(
                 __TITLE__,
-                _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
+                _(self._xbmcaddon, 'login failed'),  
+                _(self._xbmcaddon, str(e)) )
             sys.exit(0)
         else:
-            try:
-                # eigentlicher login
-                coockie = os.path.join(
-                            xbmc.translatePath('special://temp'), 
-                            '%s%s' % (__TITLE__, '.cookie') )
-                self._otr.setCookie(coockie)
-                self._otr.login(username, password)
-            except Exception, e:
-                print "login failed (2)"
-                xbmcgui.Dialog().ok(
-                    __TITLE__,
-                    _(self._xbmcaddon, 'login failed (%s)')  % str(e) )
-                sys.exit(0)
-            else:
-                print("otr login successful")
+            if login:
+                try:
+                    # eigentlicher login
+                    coockie = os.path.join(
+                                xbmc.translatePath('special://temp'), 
+                                '%s%s' % (__TITLE__, '.cookie') )
+                    self._otr.setCookie(coockie)
+                    self._otr.login(username, password)
+                except Exception, e:
+                    print "login failed (2): %s" % e
+                    xbmcgui.Dialog().ok(
+                        __TITLE__,
+                        _(self._xbmcaddon, 'login failed'), 
+                        _(self._xbmcaddon, str(e)) )
+                    sys.exit(0)
+                else:
+                    print("otr login successful")
 
         try:
             timeout = int(float(self._xbmcaddon.getSetting('otrTimeout')))
@@ -217,7 +305,7 @@ class creator:
         @return list
         """
 
-        def getListItemFromElement(element, fileinfo):
+        def getListItemFromElement(element):
             """
             generiert xbmcgui.ListItem fuer ein element
 
@@ -237,115 +325,207 @@ class creator:
                 url += '____'
                 return url
 
-            label = element['TITLE']
-            if 'BEGIN' in element:
-                # zeitangabe vorhanden
-                label += " (%s)" % element['BEGIN']
+
+            cachekey = 'epgid_%s' % element['EPGID']
+            try:
+                elementuri, basicitem, infos, contextmenueitems = eval(cache.get(cachekey))
+            except Exception, e:
+                cache.delete(cachekey)
+                elementinfo = otr.getFileInfoDict(element['EPGID'])
+                streaminfo = getStreamSelection(elementinfo, element['EPGID'])
+                stream_preselect, stream_selection = streaminfo
+
+                if not stream_preselect: return False
+                elementuri = "%s" % stream_preselect['uri']
+                label = element['TITLE']
+                if 'BEGIN' in element:
+                    # zeitangabe vorhanden
+                    label += " (%s)" % element['BEGIN']
+
+                # item basic infos
+                basicitem = {
+                    'label': label,
+                    'label2': element['FILENAME'],
+                    'iconImage': '%s1.jpg' % getImageUrl(element['FILENAME']),
+                    'thumbnailImage': '%sA.jpg' % getImageUrl(element['FILENAME'])
+                    }
+
+                # item detail infos
+                infos= {}
+                infos['size'] = long(stream_preselect['size'])
+                infos['plot'] = "%s GWP (%s, %s, %s)\n" % (
+                    stream_preselect['cost'], 
+                    stream_preselect['type'], 
+                    stream_preselect['stream'].replace('_', ' '),
+                    stream_preselect['rsize'] )
+                if 'DURATION' in element: infos['duration'] = element['DURATION'].split()[0]
+                if 'DOWNLOADCOUNT' in element: infos['playcount'] = int(element['DOWNLOADCOUNT'])
+                if 'TITLE' in element: infos['title'] = element['TITLE']
+                if 'STATION' in element: infos['studio'] = element['STATION']
+                if 'BEGIN' in element: infos['date'] = element['BEGIN']
+                if 'TITLE2' in element: infos['plot'] += "\n%s" % element['TITLE2']
+
+                streamlist = {}
+                for stream in stream_selection:
+                    streamlist[stream['name']] = stream['file']
+                streamlist = base64.urlsafe_b64encode(repr(streamlist))
+
+                # contextmenue
+                contextmenueitems = []
+                contextmenueitems.append (tuple(( 
+                        _(self._xbmcaddon, 'play'), 
+                        "PlayWith()" )))
+                contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'stream select'), 
+                        "XBMC.RunPlugin(%s://%s/%s?list=%s&file=%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'streamselect',
+                            streamlist,
+                            base64.urlsafe_b64encode(label)) )))
+                contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'refresh listing'),
+                        "XBMC.RunPlugin(%s://%s/%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'cleancache') )))
+                contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'refresh element'),
+                        "XBMC.RunPlugin(%s://%s/%s?search=%%25%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'cleancache',
+                            element['EPGID']) )))
+                contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'delete'), 
+                        "XBMC.RunPlugin(%s://%s/%s?epgid=%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'deletejob',
+                            element['EPGID']) )))
+                contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'userinfo'), 
+                        "XBMC.RunPlugin(%s://%s/%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'userinfo' ) )))
+
+                # cache object
+                cache.set(cachekey, repr([elementuri, basicitem, infos, contextmenueitems]))
 
             # listelement erzeugen
-            li = xbmcgui.ListItem(
-                label=label,
-                label2=element['FILENAME'],
-                iconImage='%s1.jpg' % getImageUrl(element['FILENAME']),
-                thumbnailImage='%sA.jpg' % getImageUrl(element['FILENAME']) )
-
-            # infos aggregieren
-            infos= {}
-            infos['size'] = long(fileinfo['size'])
-            infos['plot'] = "%s GWP (%s, %s, %s)\n" % (
-                fileinfo['cost'], 
-                fileinfo['type'].replace('_', ' '), 
-                fileinfo['stream'].replace('_', ' '),
-                getSizeStr(infos['size']*1024) )
-            if 'DURATION' in element: infos['duration'] = element['DURATION'].split()[0]
-            if 'DOWNLOADCOUNT' in element: infos['playcount'] = int(element['DOWNLOADCOUNT'])
-            if 'TITLE' in element: infos['title'] = element['TITLE']
-            if 'STATION' in element: infos['studio'] = element['STATION']
-            if 'BEGIN' in element: infos['date'] = element['BEGIN']
-            if 'TITLE2' in element: infos['plot'] += "\n%s" % element['TITLE2']
+            li = xbmcgui.ListItem(**basicitem)
             li.setInfo('video', infos)
+            li.addContextMenuItems(contextmenueitems, replaceItems=True )
+            return elementuri, li, False
 
-            # contextmenue erzeuegen
-            li.addContextMenuItems(
-                [ 
-                  ( _(self._xbmcaddon, 'play'), 
-                    "PlayWith()" ),
-                  ( _(self._xbmcaddon, 'delete'), 
-                    "XBMC.RunPlugin(%s://%s/%s?epgid=%s)" % (
-                        self._url.scheme,
-                        self._url.netloc,
-                        'deletejob',
-                        element['EPGID']), ),
-                  ( _(self._xbmcaddon, 'refresh listing'),
-                    "XBMC.RunPlugin(%s://%s/%s)" % (
-                        self._url.scheme,
-                        self._url.netloc,
-                        'cleancache'), ),
-                  ( _(self._xbmcaddon, 'refresh element'),
-                    "XBMC.RunPlugin(%s://%s/%s?search=%%25%s)" % (
-                        self._url.scheme,
-                        self._url.netloc,
-                        'cleancache',
-                        element['EPGID']), ),
-                  ( _(self._xbmcaddon, 'userinfo'), 
-                    "XBMC.RunPlugin(%s://%s/%s)" % (
-                        self._url.scheme,
-                        self._url.netloc,
-                        'userinfo' ),)
-                ], replaceItems=True )
-
-            return li
+    
+        def getStreamSelection(elementinfo, epgid):
+            """
+            aggregiert die informationen der verfuegbaren streams
+            
+            @param streamelement: stream xml struktur die von otr kommt
+            @type  streamelement: dict
+            @param epgid: epgid der  aufnahme
+            @type  epgid: string
+            """
 
 
-        def getFileInfo(element):
+            def aggrstreaminfo(streamelement, epgid):
+                """
+                aggregiert die informationen eines einzelnen streams
+                
+                @param streamelement: stream xml struktur die von otr kommt
+                @type  streamelement: dict
+                @param epgid: epgid der  aufnahme
+                @type  epgid: string
+                """
+                if not streamelement: return False
+                if  self._xbmcaddon.getSetting('otrPreferPrio') == 'true':
+                    stype = ( (getKey(streamelement, 'PRIO') and 'PRIO') or
+                              (getKey(streamelement, 'FREE') and 'FREE') or False )
+                else:
+                    stype = ( (getKey(streamelement, 'FREE') and 'FREE') or
+                              (getKey(streamelement, 'PRIO') and 'PRIO') or False )
+                if not stype: return False
 
-            # streamauswahl
-            streams = ['MP4_Stream', 'MP4']
-            if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
-                streams.insert(0, 'MP4_geschnitten')
-            if self._xbmcaddon.getSetting('otrPreferHQ') == 'true':
-                streams.insert(0, 'HQMP4') 
-                streams.insert(0, 'HQMP4_Stream')
-                if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
-                    streams.insert(0, 'HQMP4_geschnitten')
-            if self._xbmcaddon.getSetting('otrPreferHD') == 'true':
-                streams.insert(0, 'HDMP4') 
-                streams.insert(0, 'HDMP4_Stream')
-                if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
-                    streams.insert(0, 'HDMP4_geschnitten')
-
-            # fileinfoDict abfragen
-            cachekey = 'epgid_%s' % element['EPGID']
-            if cache.get(cachekey):
-                elementinfo = eval(cache.get(cachekey))
-            else:
-                elementinfo = otr.getFileInfoDict(element['EPGID'])
-                cache.set(cachekey, repr(elementinfo))
-
-            for stream in streams: 
-                if getKey(elementinfo, stream): break
-            if  self._xbmcaddon.getSetting('otrPreferPrio') == 'true':
-                stype = ( (getKey(elementinfo, stream, 'PRIO') and 'PRIO') or
-                          (getKey(elementinfo, stream, 'FREE') and 'FREE') or False )
-            else:
-                stype = ( (getKey(elementinfo, stream, 'FREE') and 'FREE') or
-                          (getKey(elementinfo, stream, 'PRIO') and 'PRIO') or False )
-
-            if not stype: 
-                return False
-            else:
-                size = getKey(elementinfo, stream, 'SIZE')
-                fileuri  = getKey(elementinfo, stream, stype)
+                size = getKey(streamelement, 'SIZE')
+                rsize = getSizeStr(long(size)*1024)
+                fileuri  = getKey(streamelement, stype)
                 uri = "%s://%s/%s?fileuri=%s&epgid=%s" % (
-                    self._url.scheme,
-                    self._url.netloc,
-                    'play',
-                    base64.urlsafe_b64encode(fileuri),
-                    element['EPGID'])
-                gwp  = getKey(elementinfo, stream, 'GWPCOSTS', stype)
+                        self._url.scheme,
+                        self._url.netloc,
+                        "play",
+                        base64.urlsafe_b64encode(fileuri),
+                        epgid)
+                gwp  = getKey(streamelement, 'GWPCOSTS', stype)
+                name = stream
+                if not self._xbmcaddon.getSetting('otrShowUnspported') == 'true':
+                    name = name.replace('unkodiert', '')
+                name = name.replace('_', ' ').strip()
+                name += ", %s" % rsize
+                name += ", %s GWP" % gwp
 
-            # aggergieren und ausliefern
-            return {'uri':uri, 'type': stype, 'cost': gwp, 'size':size, 'stream':stream}
+                return {
+                    'uri': uri,
+                    'file': fileuri,
+                    'name': name,
+                    'cost': gwp, 
+                    'size': size, 
+                    'rsize': rsize,
+                    'type': stype, 
+                    'stream': stream } 
+
+
+
+            # streamvorauswahl nach den einsellungen
+            preselectable = ['MP4_Stream', 'MP4_unkodiert']
+            if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                preselectable.append('AVI_unkodiert')
+            if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
+                preselectable.insert(0, 'MP4_geschnitten')
+            if self._xbmcaddon.getSetting('otrPreferHQ') == 'true':
+                if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                    preselectable.insert(0, 'HQAVI_unkodiert')
+                preselectable.insert(0, 'HQMP4') 
+                preselectable.insert(0, 'HQMP4_Stream')
+                if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
+                    if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                        preselectable.insert(0, 'HQ_geschnitten')
+                    preselectable.insert(0, 'HQMP4_geschnitten')
+            if self._xbmcaddon.getSetting('otrPreferHD') == 'true':
+                if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                    preselectable.insert(0, 'HDAVI_unkodiert')
+                preselectable.insert(0, 'HDMP4') 
+                preselectable.insert(0, 'HDMP4_Stream')
+                if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
+                    if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
+                        preselectable.insert(0, 'HD_geschnitten')
+                    preselectable.insert(0, 'HDMP4_geschnitten')
+
+            
+            selection = []
+            for stream in elementinfo.keys():
+                streaminfo = aggrstreaminfo(
+                                getKey(elementinfo, stream),
+                                epgid )
+                if not streaminfo: continue
+                if not self._xbmcaddon.getSetting('otrShowUnsupported') == 'true':
+                    # hide unsupported
+                    supportedendings = ['avi', 'mp4', 'mp3']
+                    if 'otrkey' in streaminfo['file']: continue
+                    if not streaminfo['file'].split('.').pop() in supportedendings: continue
+                selection.append( streaminfo )
+
+            for stream in preselectable: 
+                if getKey(elementinfo, stream): 
+                    break
+            preselectstream = aggrstreaminfo(
+                                getKey(elementinfo, stream),
+                                epgid )
+
+            return preselectstream, selection
+
 
         # progressdialog erzeuegen
         prdialog = xbmcgui.DialogProgress()
@@ -360,7 +540,8 @@ class creator:
             prdialog.close()
             xbmcgui.Dialog().ok(
                     __TITLE__, 
-                    _(self._xbmcaddon, 'loading recording list failed (%s)' % str(e)) )
+                    _(self._xbmcaddon, 'loading recording list failed'),
+                    _(self._xbmcaddon, str(e)) )
             return []
         else:
             listing = []
@@ -377,14 +558,13 @@ class creator:
                 prdialog.update(percent, element['FILENAME'])
 
                 try:
-                    # fileinfoDict abfragen
-                    fileinfo = getFileInfo(element)
+                    # fileinfo abfragen
+                    litem = getListItemFromElement(element)
                 except Exception, e:
                     print "getFileInfo failed (%s)" % str(e)
                     xbmc.executebuiltin('Notification("%s", "%s")' % (element['FILENAME'], str(e)))
                 else:
-                    if fileinfo:
-                        listing.append([ fileinfo['uri'], getListItemFromElement(element, fileinfo), False ])
+                    if litem: listing.append(litem)
 
             # progressdialog abschliessen
             prdialog.close()
@@ -429,16 +609,6 @@ class creator:
         @type  otr: OtrHandler Instanz
         """
         return self._createList(otr, 'recordings')
-
-    def _createArchiveList(self, otr): 
-        """
-        wrapper um createList fuer archive aufzurufen
-
-        @param otr: OtrHandler
-        @type  otr: OtrHandler Instanz
-        """
-        return self._createList(otr, 'archive')
-    
 
     def _createFutureSearchList(self, otr): 
         """
@@ -537,7 +707,12 @@ class creator:
         if self._xbmcaddon.getSetting('otrAskSchedule') == 'true': ask = True
         if self._xbmcaddon.getSetting('otrAskSchedule') == 'false': ask = False
         if not ask or xbmcgui.Dialog().yesno(__TITLE__, _(self._xbmcaddon, 'schedule job?')):
+            prdialog = xbmcgui.DialogProgress()
+            prdialog.create(_(self._xbmcaddon, 'scheduling'))
+            prdialog.update(0)
             res = otr.scheduleJob(parse_qs(self._url.query)['epgid'].pop())
+            prdialog.update(100)
+            prdialog.close()
             if len(res) > 0:
                 xbmc.executebuiltin('Notification("%s", "%s")' % (
                     __TITLE__, 
@@ -569,7 +744,12 @@ class creator:
         if self._xbmcaddon.getSetting('otrAskDelete') == 'true': ask = True
         if self._xbmcaddon.getSetting('otrAskDelete') == 'false': ask = False
         if not ask or xbmcgui.Dialog().yesno(__TITLE__, _(self._xbmcaddon, 'delete job?')):
+            prdialog = xbmcgui.DialogProgress()
+            prdialog.create(_(self._xbmcaddon, 'delete'))
+            prdialog.update(0)
             otr.deleteJob( parse_qs(self._url.query)['epgid'].pop() )
+            prdialog.update(100)
+            prdialog.close()
             xbmc.executebuiltin("Container.Refresh")
             xbmc.executebuiltin('Notification("%s", "%s")' % (
                 __TITLE__, 
@@ -595,17 +775,34 @@ class creator:
         return []
 
 
-    def _play(self, otr):
+    def _selectStream(self, otr):
+        """
+        aufnahme loeschen
+
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
+        """
+        streamlist = eval(base64.urlsafe_b64decode(parse_qs(self._url.query)['list'].pop()))
+        filename = base64.urlsafe_b64decode(parse_qs(self._url.query)['file'].pop())
+        choice = xbmcgui.Dialog().select(filename, streamlist.keys())
+        if choice >= 0:
+            uri = streamlist[streamlist.keys()[choice]]
+            self._play(otr, uri) #executebuiltin("RunScript(%s)" % uri, True)
+        return True
+
+    def _play(self, otr, requesturi=False):
         queuemax = 0;
+        xbmc.executebuiltin("Dialog.Close(all,true)", True)
         prdialog = xbmcgui.DialogProgress()
         prdialog.create(_(self._xbmcaddon, 'downloadqueue'))
         prdialog.update(0)
 
-        if not 'fileuri' in parse_qs(self._url.query):
-            raise Exception('play without fileuri not possible')
-            return False
-        else:
-            requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
+        if not requesturi:
+            if not 'fileuri' in parse_qs(self._url.query):
+                raise Exception('play without fileuri not possible')
+                return False
+            else:
+                requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
 
         if 'epgid' in parse_qs(self._url.query):
             egid = parse_qs(self._url.query)['epgid'].pop()
@@ -614,9 +811,9 @@ class creator:
         while True:
             try:
                 fileuri = otr.getFileDownload(requesturi)
-                print "got url %s" % fileuri
                 prdialog.close()
-                xbmc.executebuiltin("PlayMedia(%s)" % fileuri)
+                print "got url %s" % fileuri
+                xbmc.executebuiltin("XBMC.PlayMedia(\"%s\")" % fileuri, True)
                 return True
             except otr.inDownloadqueueException, e:
                 if e.position > queuemax:
@@ -651,16 +848,16 @@ class creator:
         @type  otr: OtrHandler Instanz
         """
         path =  {
-                '': ['recordings', 'archive', 'scheduling'],
+                '': ['recordings', 'scheduling'],
                 'scheduling' : ['searchpast', 'searchfuture', 'pasthighlights'],
                 'scheduling/searchpast': self._createPastSearchList,
                 'scheduling/searchfuture': self._createFutureSearchList,
                 'scheduling/pasthighlights': self._createPastHightlightsList,
                 'recordings': self._createRecordingList,
-                'archive': self._createArchiveList,
                 'deletejob': self._deleteJob,
                 'schedulejob': self._scheduleJob,
                 'userinfo': self._showUserinfo,
+                'streamselect': self._selectStream,
                 'play': self._play,
                 'cleancache': self._cleanCache,
                 }

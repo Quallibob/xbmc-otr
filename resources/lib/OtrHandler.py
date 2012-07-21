@@ -17,14 +17,19 @@ import os
 import XmlDict
 import base64
 import socket
-from xml.etree import ElementTree
+import pprint
+
+try:
+    from xml.etree import ElementTree
+except ImportError:
+    import ElementTree
 
 try: import simplejson as json
 except ImportError: import json
 
 URL_OTR="http://www.onlinetvrecorder.com"
 URL_SUBCODE="http://j.mp/otrsubcode"
-VERSION="0.3"
+VERSION="0.4"
 VERSION_CHECK="http://j.mp/otrhandler-version-check"
 
 class OtrHandler:
@@ -32,8 +37,11 @@ class OtrHandler:
     OTR Representation
     """
     
-    __session = False
-    __apiauth = ""
+    __session   = False
+    __apiauth   = ""
+    __subcode   = False
+    __otr_did   = False
+    __otr_auth  = False
     __url_cookiepath = False
     __url_cookie     = None
     __url_request    = None
@@ -99,14 +107,14 @@ class OtrHandler:
             self.__url_request = Request
             self.__url_urlopen = urlopen
 
-    def __getXMLDict(self, xml):
+    def __getXMLDict(self, xml, encoding="latin9"):
         """
         parse xml into dict
 
         @param xml: xml data
         @type  xml: string
         """
-        tree = ElementTree.XML(xml)
+        tree = ElementTree.XML(xml.decode(encoding).encode('utf-8'))
         return XmlDict.XmlDict(tree)
 
     def __getUrl(self, url):
@@ -116,10 +124,13 @@ class OtrHandler:
         @param url: url to request
         @type  url: string
         """
-        print url
+        print url.replace(self.__lastPassword, 'X'*len(self.__lastPassword))
         req = self.__url_request(url)
         req.add_header('User-Agent', 'XBMC OtrHandler')
-        resp = self.__url_urlopen(req)
+	try:
+	    resp = self.__url_urlopen(req)
+        except urllib2.URLError, e:
+            raise Exception(pprint.pformat(e))
         return resp
 
     def newVersionAvailable(self):
@@ -135,8 +146,14 @@ class OtrHandler:
         return False
 
 
+    def setOtrSubcode(self, subcode):
+        self.__subcode = subcode
+        
+    def getOtrSubcode(self):
+        self.__subcode = self.__getUrl(URL_SUBCODE).read()
+        return self.__subcode
 
-    def setAPIAuthKey(self, did=131, code="%s"):
+    def __setAPIAuthKey(self):
         """
         set internal api access code
 
@@ -145,9 +162,9 @@ class OtrHandler:
         @param code: access code
         @type  code: string
         """
-        subcode = self.__getUrl(URL_SUBCODE).read()
-        checksum = hashlib.md5(code % subcode).hexdigest()
-        self.__apiauth = "&checksum=%s&did=%s" % (checksum, did)
+        if not self.__subcode: self.getOtrSubcode()
+        checksum = hashlib.md5(self.__otr_auth % self.__subcode).hexdigest()
+        self.__apiauth = "&checksum=%s&did=%s" % (checksum, self.__otr_did)
 
 
     def login(self, email, password):
@@ -159,6 +176,9 @@ class OtrHandler:
         @param password: user password
         @type  password: string
         """
+        self.__setAPIAuthKey()
+        self.__lastUsername = email
+        self.__lastPassword = password
         requrl = "%s/downloader/api/login.php?" % URL_OTR
         requrl += self.__apiauth
         requrl += "&email=%s&pass=%s" % ( urllib.quote(email), urllib.quote(password) )
@@ -167,8 +187,6 @@ class OtrHandler:
         if len(resp) and ' ' in resp:
             raise Exception(resp)
         else:
-            self.__lastUsername = email
-            self.__lastPassword = password
             if self.__url_cookiepath:
                 try:
                     self.__url_cookie.save(self.__url_cookiepath)
@@ -211,9 +229,10 @@ class OtrHandler:
         """
         lst = self.getRecordList(*args, **kwargs)
         try:
-            return self.__getXMLDict( lst )
+            return self.__getXMLDict(lst)
         except Exception, e:
-            raise Exception(lst)
+            print str('tree="""%s"""\n' % lst)
+            raise Exception(e)
         
     def getRecordList(self, 
             showonly="recordings",
@@ -435,10 +454,12 @@ class OtrHandler:
             self.setTimeout(sockettimeout)
         self.setCookie()
         if did and authcode:
-            self.setAPIAuthKey(did, authcode)
+            self.__otr_did  = did
+            self.__otr_auth = authcode
         else:
             import pah2Nahbae4cahzihach1aep
-            self.setAPIAuthKey(code=pah2Nahbae4cahzihach1aep.code())
+            self.__otr_auth = pah2Nahbae4cahzihach1aep.code()
+            self.__otr_did  = 131
 
 
 
