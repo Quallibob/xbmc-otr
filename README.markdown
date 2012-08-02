@@ -1,23 +1,23 @@
-# Description
+## Description
 
 Show [onlinetvrecorder.com](http://onlinetvrecorder.com/) recordings within XBMC.
 
-# Installation:
+## Installation:
 
 This Add-On is not yet committed to the XBMC Repository because its still in development. So, please follow the manual installation steps below so long.
 
-# Manual Installation/Update:
+## Manual Installation/Update:
 1. Download: [xbmc-otr-addon.zip](http://j.mp/xbmc-otr-addon)
 1. In XBMC: 
    1. Settings -> Add-ons -> Install from zip file
    1. Chose downloaded zip file
    1. Enjoy :)
 
-# Manual Installation/Update with git:
+## Manual Installation/Update with git:
 
 If you are familiar with git you can also checkout the sourcecode into your xbmc-addon directory. 
 
-# Warning:
+## Warning:
 
 **This is Beta Software**
 
