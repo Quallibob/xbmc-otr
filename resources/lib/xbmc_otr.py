@@ -800,9 +800,11 @@ class creator:
             for weekdelta in range(-4, 0):
                 weekstart = thisweek+datetime.timedelta(weeks=weekdelta)
                 weekstring = " -" + _(self._xbmcaddon, "%s weeks") % (weekdelta*-1) 
-                weekstring += " (%s - %s)" % ( 
-                        weekstart.date().strftime("%d. %B %Y"), 
-                        (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. %B %Y")
+		month_start_name = _(self._xbmcaddon, weekstart.date().strftime("%B")) 
+		month_end_name = _(self._xbmcaddon, (weekstart.date()+datetime.timedelta(days=6)).strftime("%B"))
+                weekstring += " (%s - %s)" % (
+                        weekstart.date().strftime("%d. " + month_start_name + " %Y"), 
+                        (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. " + month_end_name + " %Y")
                         ) 
                 listing.append(  [
                     uri + '&week=%s' % weekdelta, 
@@ -815,7 +817,9 @@ class creator:
                 'week' in arglist and arglist['week'].pop() or 0))
             for day in range(7):
                 singleday = weekstart + datetime.timedelta(days=day)
-                listitem = xbmcgui.ListItem(label=singleday.date().strftime("%A (%d. %B %Y)"))
+		weekday_name = _(self._xbmcaddon, singleday.date().strftime("%A"))
+		month_name = _(self._xbmcaddon, singleday.date().strftime("%B"))
+                listitem = xbmcgui.ListItem(label=singleday.date().strftime(weekday_name + " (%d. " + month_name + " %Y)"))
                 if singleday.date() == datetime.date.today():
                     listitem.select(True)
                 listing.append( [
@@ -828,9 +832,11 @@ class creator:
             for weekdelta in range(1, 5):
                 weekstart = thisweek+datetime.timedelta(weeks=weekdelta)
                 weekstring = " +" + _(self._xbmcaddon, "%s weeks") % (weekdelta)
-                weekstring += " (%s - %s)" % ( 
-                        weekstart.date().strftime("%d. %B %Y"), 
-                        (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. %B %Y")
+		month_start_name = _(self._xbmcaddon, weekstart.date().strftime("%B")) 
+		month_end_name = _(self._xbmcaddon, (weekstart.date()+datetime.timedelta(days=6)).strftime("%B"))
+                weekstring += " (%s - %s)" % (
+                        weekstart.date().strftime("%d. " + month_start_name + " %Y"), 
+                        (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. " + month_end_name + " %Y")
                         ) 
                 listing.append(  [
                     uri + '&' + urllib.urlencode({'week': weekdelta}), 
