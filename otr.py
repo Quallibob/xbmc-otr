@@ -103,6 +103,7 @@ offlinerequests = [
 	"scheduling/pasthighlights",
 	"scheduling/searchpast",
 	"scheduling/searchfuture",
+	"scheduling/programm",
 	"streamselect",
 	"play",
 	"",
