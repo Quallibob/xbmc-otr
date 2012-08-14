@@ -21,6 +21,7 @@ import logging
 import urllib
 import base64
 import time
+import datetime
 
 try:
     import CommonFunctions
@@ -664,6 +665,7 @@ class creator:
                     False] )
         return listing
 
+
     def _createPastHightlightsList(self, otr):
         """
         get past hightlights
@@ -775,6 +777,91 @@ class creator:
         return []
 
 
+    def _createProgrammList(self, otr):
+
+
+        arglist = parse_qs(self._url.query)
+        uri = "%s://%s/%s?%s" % (
+            self._url.scheme,
+            self._url.netloc,
+            self._url.path,
+            self._url.query)
+        print arglist
+
+        listing = []
+
+        thisweek = datetime.datetime.now()
+        thisweek = thisweek - datetime.timedelta(days=thisweek.weekday())
+
+        if not 'week' in arglist and not 'day' in arglist:
+            # wochenliste
+            thisweek = datetime.datetime.now()
+            thisweek = thisweek - datetime.timedelta(days=thisweek.weekday())
+            for weekdelta in range(-4, 0):
+                weekstart = thisweek+datetime.timedelta(weeks=weekdelta)
+                weekstring = " -" + _(self._xbmcaddon, "%s weeks") % (weekdelta*-1) 
+                weekstring += " (%s - %s)" % ( 
+                        weekstart.date().strftime("%d. %B %Y"), 
+                        (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. %B %Y")
+                        ) 
+                listing.append(  [
+                    uri + '&week=%s' % weekdelta, 
+                    xbmcgui.ListItem(label=weekstring),
+                    True] )
+
+        if not 'day' in arglist:
+            # tagesliste
+            weekstart = thisweek+datetime.timedelta(weeks=int(
+                'week' in arglist and arglist['week'].pop() or 0))
+            for day in range(7):
+                singleday = weekstart + datetime.timedelta(days=day)
+                listitem = xbmcgui.ListItem(label=singleday.date().strftime("%A (%d. %B %Y)"))
+                if singleday.date() == datetime.date.today():
+                    listitem.select(True)
+                listing.append( [
+                    uri + '&' + urllib.urlencode({'day': int(time.mktime(singleday.timetuple()))}), 
+                    listitem,
+                    True] )
+
+        if not 'week' in arglist and not 'day' in arglist:
+            # wochenliste
+            for weekdelta in range(1, 5):
+                weekstart = thisweek+datetime.timedelta(weeks=weekdelta)
+                weekstring = " +" + _(self._xbmcaddon, "%s weeks") % (weekdelta)
+                weekstring += " (%s - %s)" % ( 
+                        weekstart.date().strftime("%d. %B %Y"), 
+                        (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. %B %Y")
+                        ) 
+                listing.append(  [
+                    uri + '&' + urllib.urlencode({'week': weekdelta}), 
+                    xbmcgui.ListItem(label=weekstring),
+                    True] )
+
+        if not 'day' in arglist: 
+            return listing
+
+        if not 'channel' in arglist:
+            # kanalliste
+            channels = otr.getChannelsDict()
+            keys = channels.keys()
+            keys.sort()
+            for key in keys:
+                listing.append( [
+                    uri + '&' + urllib.urlencode({'channel': key}),
+                    xbmcgui.ListItem(label=key),
+                    True] )
+            return listing
+
+        selected_day = datetime.datetime.fromtimestamp(int(arglist['day'].pop())).date()
+        selected_channel = arglist['channel'].pop()
+
+        print "%s@%s" % (selected_channel, selected_day)
+
+        return None
+
+
+
+
     def _selectStream(self, otr):
         """
         aufnahme loeschen
@@ -849,10 +936,11 @@ class creator:
         """
         path =  {
                 '': ['recordings', 'scheduling'],
-                'scheduling' : ['searchpast', 'searchfuture', 'pasthighlights'],
+                'scheduling' : ['searchpast', 'searchfuture', 'pasthighlights', 'programm'],
                 'scheduling/searchpast': self._createPastSearchList,
                 'scheduling/searchfuture': self._createFutureSearchList,
                 'scheduling/pasthighlights': self._createPastHightlightsList,
+                'scheduling/programm': self._createProgrammList,
                 'recordings': self._createRecordingList,
                 'deletejob': self._deleteJob,
                 'schedulejob': self._scheduleJob,
