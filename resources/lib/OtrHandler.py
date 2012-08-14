@@ -30,7 +30,7 @@ except ImportError: import json
 URL_OTR="http://www.onlinetvrecorder.com"
 URL_SUBCODE="http://j.mp/otrsubcode"
 VERSION="0.5"
-VERSION_CHECK="http://j.mp/otrhandler-version-check"
+VERSION_CHECK="http://shellshark.pythonanywhere.com/otr/xbmc-otr/currentstable?version=%s"
 
 class OtrHandler:
     """
@@ -138,12 +138,12 @@ class OtrHandler:
         check for new version
         """
         try:
-            master = self.__getUrl(VERSION_CHECK).read()
-            if float(master) > float(VERSION):
-                return True
+            master = self.__getUrl(VERSION_CHECK % VERSION).read()
+            if str(master) == "ok":
+                return False
         except Exception, e:
             pass
-        return False
+        return True
 
 
     def setOtrSubcode(self, subcode):
