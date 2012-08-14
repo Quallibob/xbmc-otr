@@ -223,6 +223,35 @@ class OtrHandler:
         resp = resp.read()
         return resp
 
+
+    def getChannelsDict(self, lang=["DE", "EN"]):
+        """
+        wrapper for getChannelsDict
+        """
+        lst = self.getChannels()
+        res = {}
+        try:
+            dct = self.__getXMLDict(lst)
+            for element in dct['channel']['STATIONS']['ITEM']:
+                if element['LANGUAGE'] in lang:
+                    res[element['TITLE']] = { 
+                        'COUNTRY': element['COUNTRY'],
+                        'LANGUAGE': element['LANGUAGE']
+                        }
+        except Exception, e:
+            raise Exception(e)
+        return res
+
+
+    def getChannels(self):
+        """
+        get available channels
+        """
+        requrl = "%s/downloader/api/stations.php" % URL_OTR
+        resp = self.__session = self.__getUrl(requrl)
+        resp = resp.read()
+        return resp
+
     def getRecordListDict(self, *args, **kwargs):
         """
         wrapper for getRecordList
