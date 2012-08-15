@@ -173,6 +173,11 @@ def _(x, s):
         '%s weeks': 30348,
         '%s week': 30349,
         'tvguide': 30350,
+        'show all channels': 30351,
+        'hide channel (%s)': 30352,
+        'unhide channel (%s)': 30353,
+        'hide language (%s)': 30354,
+        'unhide language (%s)': 30355,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -804,7 +809,6 @@ class creator:
 
         def getStationThumburl(station):
             url = "http://static.onlinetvrecorder.com/images/easy/stationlogos/%s.gif"
-            print url % urllib.quote(station.lower())
             return url % urllib.quote(station.lower())
 
         arglist = parse_qs(self._url.query)
@@ -831,10 +835,12 @@ class creator:
                 weekstring += " (%s - %s)" % (
                         weekstart.date().strftime("%d. " + month_start_name + " %Y"), 
                         (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. " + month_end_name + " %Y")
-                        ) 
+                        )
+                listitem = xbmcgui.ListItem(label=weekstring)
+                listitem.addContextMenuItems([], replaceItems=True )
                 listing.append(  [
                     uri + '&week=%s' % weekdelta, 
-                    xbmcgui.ListItem(label=weekstring),
+                    listitem,
                     True] )
 
         if not 'day' in arglist:
@@ -845,11 +851,17 @@ class creator:
                 singleday = weekstart + datetime.timedelta(days=day)
                 weekday_name = _(self._xbmcaddon, singleday.date().strftime("%A"))
                 month_name = _(self._xbmcaddon, singleday.date().strftime("%B"))
+                day_uri = uri + '&' + urllib.urlencode({'day': int(time.mktime(singleday.timetuple()))})
                 listitem = xbmcgui.ListItem(label=singleday.date().strftime(weekday_name + " (%d. " + month_name + " %Y)"))
+                contextmenueitems = []
+                contextmenueitems.append ( tuple((
+                        _(self._xbmcaddon, 'show all channels'),
+                        "Container.Update(%s&showall=true,True)" % day_uri )) )
+                listitem.addContextMenuItems(contextmenueitems, replaceItems=True )
                 if singleday.date() == datetime.date.today():
                     listitem.select(True)
                 listing.append( [
-                    uri + '&' + urllib.urlencode({'day': int(time.mktime(singleday.timetuple()))}), 
+                    day_uri, 
                     listitem,
                     True] )
 
@@ -864,9 +876,11 @@ class creator:
                         weekstart.date().strftime("%d. " + month_start_name + " %Y"), 
                         (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. " + month_end_name + " %Y")
                         ) 
+                listitem = xbmcgui.ListItem(label=weekstring)
+                listitem.addContextMenuItems([], replaceItems=True )
                 listing.append(  [
                     uri + '&' + urllib.urlencode({'week': weekdelta}), 
-                    xbmcgui.ListItem(label=weekstring),
+                    listitem,
                     True] )
 
         if not 'day' in arglist: 
@@ -874,14 +888,86 @@ class creator:
 
         if not 'channel' in arglist:
             # kanalliste
+
+            hidden_chan = self._xbmcaddon.getSetting('otrChannelsHidden').split(',')
+            hidden_lang = self._xbmcaddon.getSetting('otrLanguagesHidden').split(',')
+
+            if getKey(arglist, 'hidechannel'):
+                hidden_chan.append(getKey(arglist, 'hidechannel').pop())
+                self._xbmcaddon.setSetting('otrChannelsHidden', ','.join(hidden_chan).strip(','))
+                xbmc.executebuiltin("Container.Refresh")
+            elif getKey(arglist, 'unhidechannel'):
+                name = getKey(arglist, 'unhidechannel').pop()
+                if name in hidden_chan: 
+                    hidden_chan.remove(name)
+                    self._xbmcaddon.setSetting('otrChannelsHidden', ','.join(hidden_chan).strip(','))
+                    xbmc.executebuiltin("Container.Refresh")
+
+            elif getKey(arglist, 'hidelanguage'):
+                hidden_lang.append(getKey(arglist, 'hidelanguage').pop())
+                self._xbmcaddon.setSetting('otrLanguagesHidden', ','.join(hidden_lang).strip(','))
+                xbmc.executebuiltin("Container.Refresh")
+            elif getKey(arglist, 'unhidelanguage'):
+                name = getKey(arglist, 'unhidelanguage').pop()
+                if name in hidden_lang: 
+                    hidden_lang.remove(name)
+                    self._xbmcaddon.setSetting('otrLanguagesHidden', ','.join(hidden_lang).strip(','))
+                    xbmc.executebuiltin("Container.Refresh")
+
             channels = otr.getChannelsDict()
             keys = channels.keys()
             keys.sort()
             for key in keys:
+                language = channels[key]['LANGUAGE']
+                contextmenueitems = []
+
+                if not ('showall' in arglist and arglist['showall'] == ['true']):
+                    if language in hidden_lang: continue
+                    if key in hidden_chan: continue
+                    showall = False
+                    hiddenitem = False
+                else:
+                    hiddenitem = False
+                    if language in hidden_lang: 
+                        hiddenitem = True
+                    if key in hidden_chan: 
+                        hiddenitem = True
+                    showall = True
+
+                if not hiddenitem: contextmenueitems.append ( tuple((
+                    _(self._xbmcaddon, 'hide channel (%s)') % key,
+                    "XBMC.RunPlugin(%s&hidechannel=%s)" % (
+                        uri,
+                        urllib.quote(key)) )) )
+                if hiddenitem and key in hidden_chan: contextmenueitems.append ( tuple((
+                    _(self._xbmcaddon, 'unhide channel (%s)') % key,
+                    "XBMC.RunPlugin(%s&unhidechannel=%s)" % (
+                        uri,
+                        urllib.quote(key)) )) )
+                if not hiddenitem: contextmenueitems.append ( tuple((
+                    _(self._xbmcaddon, 'hide language (%s)') % language,
+                    "XBMC.RunPlugin(%s&hidelanguage=%s)" % (
+                        uri,
+                        urllib.quote(language)) )) )
+                if hiddenitem and language in hidden_lang: contextmenueitems.append ( tuple((
+                    _(self._xbmcaddon, 'unhide language (%s)') % language,
+                    "XBMC.RunPlugin(%s&unhidelanguage=%s)" % (
+                        uri,
+                        urllib.quote(language)) )) )
+                if not showall: contextmenueitems.append ( tuple((
+                        _(self._xbmcaddon, 'show all channels'),
+                        "Container.Update(%s&showall=true,True)" % uri )) )
+
+                li = xbmcgui.ListItem(label=key, iconImage=getStationThumburl(key))
+                li.addContextMenuItems(contextmenueitems, replaceItems=True )
+
+                if hiddenitem: li.select(True)
+
                 listing.append( [
                     uri + '&' + urllib.urlencode({'channel': key}),
-                    xbmcgui.ListItem(label=key, iconImage=getStationThumburl(key)),
+                    li,
                     True] )
+
             return listing
 
         selected_day = datetime.datetime.fromtimestamp(int(arglist['day'].pop())).date()
