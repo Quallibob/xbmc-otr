@@ -6,6 +6,10 @@ Show [onlinetvrecorder.com](http://onlinetvrecorder.com/) recordings within XBMC
 
 This Add-On is not yet committed to the XBMC Repository because its still in development. So, please follow the manual installation steps below so long.
 
+## Support me: 
+* [![flattr](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/t/800518)
+* associated otr [forum thread](http://www.otrforum.com/showthread.php?67444)
+
 ## Manual Installation/Update:
 1. Download: [xbmc-otr-addon.zip](http://j.mp/xbmc-otr-addon-zip)
 1. In XBMC: 
