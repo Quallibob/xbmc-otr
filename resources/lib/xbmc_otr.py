@@ -45,28 +45,28 @@ class StorageServerDummy:
 
     dbg = False
 
-    def cacheFunction(*args):
+    def cacheFunction(self, f, *args, **kwargs):
+        return f(*args, **kwargs) 
+
+    def delete(self, *args):
         return ""
 
-    def delete(*args):
+    def set(self, *args):
         return ""
 
-    def set(*args):
-        return ""
-
-    def get(*args):
+    def get(self, *args):
         return False
 
-    def setMulti(*args):
+    def setMulti(self, *args):
         return ""
 
-    def getMulti(*args):
+    def getMulti(self, *args):
         return False
 
-    def lock(*args):
+    def lock(self, *args):
         return False
 
-    def unlock(*arg):
+    def unlock(self, *arg):
         return False
 
 
@@ -914,7 +914,7 @@ class creator:
                     self._xbmcaddon.setSetting('otrLanguagesHidden', ','.join(hidden_lang).strip(','))
                     xbmc.executebuiltin("Container.Refresh")
 
-            channels = otr.getChannelsDict()
+            channels = cache.cacheFunction(otr.getChannelsDict)
             keys = channels.keys()
             keys.sort()
             for key in keys:
