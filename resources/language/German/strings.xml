@@ -7,6 +7,8 @@
     <string id="30103">Timeout (in Sekunden)</string>
     <string id="30104">Vor dem Anlegen von Aufträgen fragen</string>
     <string id="30105">Vor dem Löschen von Aufträgen fragen</string>
+    <string id="30106">Versteckte Sender (im Fernsehprogramm)</string>
+    <string id="30107">Versteckte Sprachen (im Fernsehprogramm)</string>
     <!-- Addon Quality Settings -->
     <string id="30200">Qualität</string>
     <string id="30201">HD Version in der Vorauswahl bevorzugen</string>
@@ -67,4 +69,9 @@
     <string id="30348">%s Wochen</string>
     <string id="30349">%s Woche</string>
     <string id="30350">Fernsehprogramm</string>
+    <string id="30351">Zeige alle Kanäle</string>
+    <string id="30352">Verstecke Kanal (%s)</string>
+    <string id="30353">Zeige Kanal (%s)</string>
+    <string id="30354">Verstecke Sprache (%s)</string>
+    <string id="30355">Zeige Sprache (%s)</string>
 </strings>

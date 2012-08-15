@@ -224,7 +224,7 @@ class OtrHandler:
         return resp
 
 
-    def getChannelsDict(self, lang=["DE", "EN"]):
+    def getChannelsDict(self):
         """
         wrapper for getChannelsDict
         """
@@ -233,11 +233,10 @@ class OtrHandler:
         try:
             dct = self.__getXMLDict(lst)
             for element in dct['channel']['STATIONS']['ITEM']:
-                if element['LANGUAGE'] in lang:
-                    res[element['TITLE']] = { 
-                        'COUNTRY': element['COUNTRY'],
-                        'LANGUAGE': element['LANGUAGE']
-                        }
+                res[element['TITLE']] = { 
+                    'COUNTRY': element['COUNTRY'],
+                    'LANGUAGE': element['LANGUAGE']
+                    }
         except Exception, e:
             raise Exception(e)
         return res
