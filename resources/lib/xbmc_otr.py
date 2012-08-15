@@ -171,7 +171,8 @@ def _(x, s):
         'November': 30346,
         'December': 30347,
         '%s weeks': 30348,
-        'tvguide': 30349,
+        '%s week': 30349,
+        'tvguide': 30350,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -801,13 +802,17 @@ class creator:
     def _createProgrammList(self, otr):
 
 
+        def getStationThumburl(station):
+            url = "http://static.onlinetvrecorder.com/images/easy/stationlogos/%s.gif"
+            print url % urllib.quote(station.lower())
+            return url % urllib.quote(station.lower())
+
         arglist = parse_qs(self._url.query)
         uri = "%s://%s/%s?%s" % (
             self._url.scheme,
             self._url.netloc,
             self._url.path,
             self._url.query)
-        print arglist
 
         listing = []
 
@@ -820,7 +825,7 @@ class creator:
             thisweek = thisweek - datetime.timedelta(days=thisweek.weekday())
             for weekdelta in range(-4, 0):
                 weekstart = thisweek+datetime.timedelta(weeks=weekdelta)
-                weekstring = " -" + _(self._xbmcaddon, "%s weeks") % (weekdelta*-1) 
+                weekstring = " -" + _(self._xbmcaddon, weekdelta<-1 and "%s weeks" or "%s week") % (weekdelta*-1) 
                 month_start_name = _(self._xbmcaddon, weekstart.date().strftime("%B")) 
                 month_end_name = _(self._xbmcaddon, (weekstart.date()+datetime.timedelta(days=6)).strftime("%B"))
                 weekstring += " (%s - %s)" % (
@@ -852,7 +857,7 @@ class creator:
             # wochenliste
             for weekdelta in range(1, 5):
                 weekstart = thisweek+datetime.timedelta(weeks=weekdelta)
-                weekstring = " +" + _(self._xbmcaddon, "%s weeks") % (weekdelta)
+                weekstring = " +" + _(self._xbmcaddon, weekdelta>1 and "%s weeks" or "%s week") % (weekdelta)
                 month_start_name = _(self._xbmcaddon, weekstart.date().strftime("%B")) 
                 month_end_name = _(self._xbmcaddon, (weekstart.date()+datetime.timedelta(days=6)).strftime("%B"))
                 weekstring += " (%s - %s)" % (
@@ -875,7 +880,7 @@ class creator:
             for key in keys:
                 listing.append( [
                     uri + '&' + urllib.urlencode({'channel': key}),
-                    xbmcgui.ListItem(label=key),
+                    xbmcgui.ListItem(label=key, iconImage=getStationThumburl(key)),
                     True] )
             return listing
 

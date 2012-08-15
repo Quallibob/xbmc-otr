@@ -65,5 +65,6 @@
     <string id="30346">November</string>
     <string id="30347">December</string>
     <string id="30348">%s weeks</string>
-    <string id="30349">TV guide</string>
+    <string id="30349">%s week</string>
+    <string id="30350">TV guide</string>
 </strings>
