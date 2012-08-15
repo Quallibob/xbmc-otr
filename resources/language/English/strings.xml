@@ -45,4 +45,25 @@
     <string id="30326">Refresh Job</string>
     <string id="30327">Streamselection</string>
     <string id="30328">Connection timeout, try again later.</string>
+    <string id="30329">Monday</string>
+    <string id="30330">Tuesday</string>
+    <string id="30331">Wednesday</string>
+    <string id="30332">Thursday</string>
+    <string id="30333">Friday</string>
+    <string id="30334">Saturday</string>
+    <string id="30335">Sunday</string>
+    <string id="30336">January</string>
+    <string id="30337">February</string>
+    <string id="30338">March</string>
+    <string id="30339">April</string>
+    <string id="30340">May</string>
+    <string id="30341">June</string>
+    <string id="30342">July</string>
+    <string id="30343">August</string>
+    <string id="30344">September</string>
+    <string id="30345">October</string>
+    <string id="30346">November</string>
+    <string id="30347">December</string>
+    <string id="30348">%s weeks</string>
+    <string id="30349">TV guide</string>
 </strings>
