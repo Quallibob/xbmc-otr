@@ -178,6 +178,8 @@ def _(x, s):
         'unhide channel (%s)': 30353,
         'hide language (%s)': 30354,
         'unhide language (%s)': 30355,
+        'day before': 30356,
+        'day after': 30357,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -970,42 +972,56 @@ class creator:
 
             return listing
 
-        selected_day = datetime.datetime.fromtimestamp(int(arglist['day'].pop())).date()
-        selected_channel = arglist['channel'].pop()
+        if 'day' in arglist and 'channel' in arglist:
+            selected_daystamp = int(arglist['day'].pop())
+            selected_day = datetime.datetime.fromtimestamp(selected_daystamp).date()
+            selected_channel = arglist['channel'].pop()
 
-        entries = otr.getChannelListingDict([selected_channel], selected_day, selected_day) or []
-        entries = getKey(entries, 'ITEM') or []
-
-        for entry in entries:
-            title = urllib.unquote_plus(entry['TITEL'])
-
-            attribs = []
-            if 'NICEDATE' in entry: attribs.append(entry['NICEDATE'])
-            if 'DAUER' in entry: attribs.append("%smin" % entry['DAUER'])
-            title += " (%s)" % ', '.join(attribs)
-
-            info = {}
-            if 'NICEDATE' in entry and entry['NICEDATE']: info['date'] = entry['NICEDATE']
-            if 'TYP' in entry and entry['TYP']: info['genre'] = urllib.unquote_plus(entry['TYP'])
-            if 'TEXT' in entry and entry['TEXT']: info['plot'] = urllib.unquote_plus(entry['TEXT'])
-            if 'RATING' in entry and entry['RATING']: info['rating'] = int(entry['RATING'])
-            if 'PROGRAMMINGS' in entry and entry['PROGRAMMINGS']: info['playcount'] = int(entry['PROGRAMMINGS'])
-            if 'FSK' in entry and entry['FSK']: info['mpaa'] = urllib.unquote_plus(entry['FSK'])
-
-            li = xbmcgui.ListItem(label=title)
-            li.setInfo('video', info)
-            if 'HIGHLIGHT' in entry and entry['HIGHLIGHT'] and int(entry['HIGHLIGHT'])>0:
-                li.select(True)
+            entries = otr.getChannelListingDict([selected_channel], selected_day, selected_day) or []
+            entries = getKey(entries, 'ITEM') or []
 
             listing.append( [
-                "%s://%s/%s?epgid=%s" % (
-                    self._url.scheme,
-                    self._url.netloc,
-                    'schedulejob',
-                    entry['ID']),
-                li,
-                False] )
-        return listing
+                uri.replace(str(selected_daystamp), str(selected_daystamp-86400)),
+                xbmcgui.ListItem(label=_(self._xbmcaddon, 'day before')),
+                True] )
+            
+
+            for entry in entries:
+                title = urllib.unquote_plus(entry['TITEL'])
+
+                attribs = []
+                if 'NICEDATE' in entry: attribs.append(entry['NICEDATE'])
+                if 'DAUER' in entry: attribs.append("%smin" % entry['DAUER'])
+                title += " (%s)" % ', '.join(attribs)
+
+                info = {}
+                if 'NICEDATE' in entry and entry['NICEDATE']: info['date'] = entry['NICEDATE']
+                if 'TYP' in entry and entry['TYP']: info['genre'] = urllib.unquote_plus(entry['TYP'])
+                if 'TEXT' in entry and entry['TEXT']: info['plot'] = urllib.unquote_plus(entry['TEXT'])
+                if 'RATING' in entry and entry['RATING']: info['rating'] = int(entry['RATING'])
+                if 'PROGRAMMINGS' in entry and entry['PROGRAMMINGS']: info['playcount'] = int(entry['PROGRAMMINGS'])
+                if 'FSK' in entry and entry['FSK']: info['mpaa'] = urllib.unquote_plus(entry['FSK'])
+
+                li = xbmcgui.ListItem(label=title)
+                li.setInfo('video', info)
+                if 'HIGHLIGHT' in entry and entry['HIGHLIGHT'] and int(entry['HIGHLIGHT'])>0:
+                    li.select(True)
+
+                listing.append( [
+                    "%s://%s/%s?epgid=%s" % (
+                        self._url.scheme,
+                        self._url.netloc,
+                        'schedulejob',
+                        entry['ID']),
+                    li,
+                    False] )
+
+            listing.append( [
+                uri.replace(str(selected_daystamp), str(selected_daystamp+86400)),
+                xbmcgui.ListItem(label=_(self._xbmcaddon, 'day after')),
+                True] )
+
+            return listing
 
         return None
 
