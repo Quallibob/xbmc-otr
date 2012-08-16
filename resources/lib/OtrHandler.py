@@ -219,9 +219,30 @@ class OtrHandler:
         """
         requrl = "%s/index.php?aktion=deleteJob" % URL_OTR
         requrl += "&email=%s&epgid=%s" % ( base64.urlsafe_b64encode(self.__lastUsername), base64.urlsafe_b64encode(epgid) )
-        resp = self.__session = self.__getUrl(requrl)
+        resp = self.__getUrl(requrl)
         resp = resp.read()
         return resp
+
+
+    def getChannelListingDict(self, *args, **kwargs):
+        lst = self.getChannelListing(*args, **kwargs)
+        try:
+            dct = self.__getXMLDict(lst)
+            return dct
+        except Exception, e:
+            raise Exception(e)
+
+    def getChannelListing(self, stations, start, end):
+        requrl = "%s/index.php?&aktion=epg_export&format=xml&btn_ok=OK&" % URL_OTR
+        requrl += urllib.urlencode({
+            'stations': ','.join(stations),
+            'from': start.strftime("%d.%m.%Y"),
+            'to': end.strftime("%d.%m.%Y"),
+            })
+        resp = self.__getUrl(requrl)
+        resp = resp.read()
+        return resp
+
 
 
     def getChannelsDict(self):
