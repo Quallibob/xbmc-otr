@@ -261,7 +261,7 @@ class housekeeper:
             # hanlder instanz laden
             self._otr = OtrHandler.OtrHandler()
             # subcode caching
-            if cache.get('otrsubcode'):
+            if cache.get('otrsubcode') and cache.get('otrsubcode_refreshtime'):
                 self._otr.setOtrSubcode(cache.get('otrsubcode'))
             else:
                 cache.set('otrsubcode', self._otr.getOtrSubcode())
@@ -973,7 +973,39 @@ class creator:
         selected_day = datetime.datetime.fromtimestamp(int(arglist['day'].pop())).date()
         selected_channel = arglist['channel'].pop()
 
-        print "%s@%s" % (selected_channel, selected_day)
+        entries = otr.getChannelListingDict([selected_channel], selected_day, selected_day) or []
+        entries = getKey(entries, 'ITEM') or []
+
+        for entry in entries:
+            title = urllib.unquote_plus(entry['TITEL'])
+
+            attribs = []
+            if 'NICEDATE' in entry: attribs.append(entry['NICEDATE'])
+            if 'DAUER' in entry: attribs.append("%smin" % entry['DAUER'])
+            title += " (%s)" % ', '.join(attribs)
+
+            info = {}
+            if 'NICEDATE' in entry and entry['NICEDATE']: info['date'] = entry['NICEDATE']
+            if 'TYP' in entry and entry['TYP']: info['genre'] = urllib.unquote_plus(entry['TYP'])
+            if 'TEXT' in entry and entry['TEXT']: info['plot'] = urllib.unquote_plus(entry['TEXT'])
+            if 'RATING' in entry and entry['RATING']: info['rating'] = int(entry['RATING'])
+            if 'PROGRAMMINGS' in entry and entry['PROGRAMMINGS']: info['playcount'] = int(entry['PROGRAMMINGS'])
+            if 'FSK' in entry and entry['FSK']: info['mpaa'] = urllib.unquote_plus(entry['FSK'])
+
+            li = xbmcgui.ListItem(label=title)
+            li.setInfo('video', info)
+            if 'HIGHLIGHT' in entry and entry['HIGHLIGHT'] and int(entry['HIGHLIGHT'])>0:
+                li.select(True)
+
+            listing.append( [
+                "%s://%s/%s?epgid=%s" % (
+                    self._url.scheme,
+                    self._url.netloc,
+                    'schedulejob',
+                    entry['ID']),
+                li,
+                False] )
+        return listing
 
         return None
 
@@ -1054,7 +1086,7 @@ class creator:
         """
         path =  {
                 '': ['recordings', 'scheduling'],
-                'scheduling' : ['searchpast', 'searchfuture', 'pasthighlights', 'tvguide'],
+                'scheduling' : ['tvguide', 'searchpast', 'searchfuture', 'pasthighlights'],
                 'scheduling/searchpast': self._createPastSearchList,
                 'scheduling/searchfuture': self._createFutureSearchList,
                 'scheduling/pasthighlights': self._createPastHightlightsList,
