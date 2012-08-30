@@ -991,7 +991,6 @@ class creator:
 
                 attribs = []
                 if 'NICEDATE' in entry: attribs.append(entry['NICEDATE'])
-                if 'DAUER' in entry: attribs.append("%smin" % entry['DAUER'])
                 title += " (%s)" % ', '.join(attribs)
 
                 info = {}
@@ -1000,6 +999,7 @@ class creator:
                 if 'TEXT' in entry and entry['TEXT']: info['plot'] = urllib.unquote_plus(entry['TEXT'])
                 if 'RATING' in entry and entry['RATING']: info['rating'] = int(entry['RATING'])
                 if 'PROGRAMMINGS' in entry and entry['PROGRAMMINGS']: info['playcount'] = int(entry['PROGRAMMINGS'])
+                if 'DAUER' in entry and entry['DAUER']: info['duration'] = entry['DAUER']
                 if 'FSK' in entry and entry['FSK']: info['mpaa'] = urllib.unquote_plus(entry['FSK'])
 
                 li = xbmcgui.ListItem(label=title)
