@@ -1102,7 +1102,7 @@ class creator:
         """
         path =  {
                 '': ['recordings', 'scheduling'],
-                'scheduling' : ['tvguide', 'searchpast', 'searchfuture', 'pasthighlights'],
+                'scheduling' : ['tvguide', 'searchpast', 'searchfuture'],
                 'scheduling/searchpast': self._createPastSearchList,
                 'scheduling/searchfuture': self._createFutureSearchList,
                 'scheduling/pasthighlights': self._createPastHightlightsList,
