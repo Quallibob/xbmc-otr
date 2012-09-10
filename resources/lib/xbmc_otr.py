@@ -509,9 +509,11 @@ class creator:
 
 
             # streamvorauswahl nach den einsellungen
-            preselectable = ['MP4_Stream', 'MP4_unkodiert']
+            preselectable = []
             if self._xbmcaddon.getSetting('otrAcceptAVI') == 'true':
                 preselectable.append('AVI_unkodiert')
+            preselectable.append('MP4_Stream')
+            preselectable.append('MP4_unkodiert')
             if self._xbmcaddon.getSetting('otrPreferCut') == 'true':
                 preselectable.insert(0, 'MP4_geschnitten')
             if self._xbmcaddon.getSetting('otrPreferHQ') == 'true':
