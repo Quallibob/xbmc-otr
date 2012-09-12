@@ -11,6 +11,7 @@
 
 import os
 import sys
+import re
 import subprocess
 import xbmc
 import xbmcplugin
@@ -19,6 +20,7 @@ import xbmcgui
 import OtrHandler
 import logging
 import urllib
+import urllib2
 import base64
 import time
 import datetime
@@ -84,6 +86,27 @@ except Exception, e:
         print "StorageServerDummy loaded (%s)" % e
 
 #cache.dbg = True
+
+
+
+
+def DownloaderClass(url,dest):
+    dp = xbmcgui.DialogProgress()
+    dp.create("Download", "Downloading File" , url.split('/').pop())
+    urllib.urlretrieve(url,dest,lambda nb, bs, fs, url=url: _pbhook(nb,bs,fs,url,dp))
+ 
+def _pbhook(numblocks, blocksize, filesize, url=None,dp=None):
+    try:
+        percent = min((numblocks*blocksize*100)/filesize, 100)
+        dp.update(percent)
+    except:
+        percent = 100
+        dp.update(percent)
+    if dp.iscanceled(): 
+        dp.close()
+        raise Exception('download canceled')
+
+
 
 def pprint(s):
     import pprint
@@ -326,6 +349,9 @@ class creator:
         self._xbmcaddon = xbmcaddon.Addon(id=url.netloc)
         self._common = CommonFunctions
 
+    def Notification(self, title, text):
+        return xbmc.executebuiltin('Notification("%s", "%s")' % (title, _(self._xbmcaddon, str(text))))
+
     def _createList(self, otr, scope):
         """
         Create the dynamic list of all content
@@ -411,6 +437,14 @@ class creator:
                             self._url.scheme,
                             self._url.netloc,
                             'streamselect',
+                            streamlist,
+                            base64.urlsafe_b64encode(label)) )))
+                contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'download select'), 
+                        "XBMC.RunPlugin(%s://%s/%s?list=%s&file=%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'downloadselect',
                             streamlist,
                             base64.urlsafe_b64encode(label)) )))
                 contextmenueitems.append (tuple((
@@ -1030,6 +1064,9 @@ class creator:
 
 
 
+
+
+
     def _selectStream(self, otr):
         """
         aufnahme loeschen
@@ -1037,27 +1074,27 @@ class creator:
         @param otr: OtrHandler
         @type  otr: OtrHandler Instanz
         """
+        mode = self._url.path.lstrip('/')
+
         streamlist = eval(base64.urlsafe_b64decode(parse_qs(self._url.query)['list'].pop()))
         filename = base64.urlsafe_b64decode(parse_qs(self._url.query)['file'].pop())
         choice = xbmcgui.Dialog().select(filename, streamlist.keys())
         if choice >= 0:
             uri = streamlist[streamlist.keys()[choice]]
-            self._play(otr, uri) #executebuiltin("RunScript(%s)" % uri, True)
+            if mode == 'streamselect':
+                self._play(otr, uri) #executebuiltin("RunScript(%s)" % uri, True)
+            if mode == 'downloadselect':
+                self._download(otr, uri)
         return True
 
-    def _play(self, otr, requesturi=False):
+
+
+    def _downloadqueue(self, otr, requesturi):
         queuemax = 0;
         xbmc.executebuiltin("Dialog.Close(all,true)", True)
         prdialog = xbmcgui.DialogProgress()
         prdialog.create(_(self._xbmcaddon, 'downloadqueue'))
         prdialog.update(0)
-
-        if not requesturi:
-            if not 'fileuri' in parse_qs(self._url.query):
-                raise Exception('play without fileuri not possible')
-                return False
-            else:
-                requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
 
         if 'epgid' in parse_qs(self._url.query):
             egid = parse_qs(self._url.query)['epgid'].pop()
@@ -1067,9 +1104,7 @@ class creator:
             try:
                 fileuri = otr.getFileDownload(requesturi)
                 prdialog.close()
-                print "got url %s" % fileuri
-                xbmc.executebuiltin("XBMC.PlayMedia(\"%s\")" % fileuri, True)
-                return True
+                return fileuri
             except otr.inDownloadqueueException, e:
                 if e.position > queuemax:
                     queuemax = e.position
@@ -1089,8 +1124,54 @@ class creator:
                     _(self._xbmcaddon, e.value) )
                 return False
                 
-            
+    def _play(self, otr, requesturi=False):
+        if not requesturi:
+            if not 'fileuri' in parse_qs(self._url.query):
+                raise Exception('play without fileuri not possible')
+                return False
+            else:
+                requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
+
+        localfile = self.getLocalDownloadPath(requesturi)
+        if os.access(localfile, os.F_OK):
+            print "playing file %s" % localfile
+            xbmc.executebuiltin("XBMC.PlayMedia(\"%s\")" % localfile, True)
+        else:
+            remoteurl = self._downloadqueue(otr, requesturi)
+            if remoteurl:
+                print "playing url %s" % remoteurl
+                xbmc.executebuiltin("XBMC.PlayMedia(\"%s\")" % remoteurl, True)
+        return True
+
+
+    def getLocalDownloadPath(self, url):
+        return os.path.join(xbmc.translatePath('special://temp'), url.split('/').pop())
+
+    def _download(self, otr, requesturi):
+        url = self._downloadqueue(otr, requesturi)
+        if url:
+            filename = url.split('/').pop()
+            target = self.getLocalDownloadPath(url)
+
+            if os.access(target, os.F_OK):
+                if not xbmcgui.Dialog().yesno(
+                    __TITLE__,
+                    _(self._xbmcaddon, 'file already exists, overwrite?'),
+                    str(filename) ): return True
+            if not os.access(target, os.W_OK):
+                self.Notification(filename, 'could not write file')
+                return False
+
+            try:
+                print "downloading url %s to %s" % (url, target)
+                DownloaderClass(url, target)
+            except Exception, e:
+                self.Notification(filename, e)
+
+        return True
         
+
+
     def get(self, otr):
         """
         pfad aufloesen und auflistung zurueckliefern
@@ -1114,6 +1195,7 @@ class creator:
                 'schedulejob': self._scheduleJob,
                 'userinfo': self._showUserinfo,
                 'streamselect': self._selectStream,
+                'downloadselect': self._selectStream,
                 'play': self._play,
                 'cleancache': self._cleanCache,
                 }
