@@ -92,7 +92,7 @@ except Exception, e:
 
 def DownloaderClass(url,dest):
     dp = xbmcgui.DialogProgress()
-    dp.create("Download", "Downloading File" , url.split('/').pop())
+    dp.create("Download", url.split('/').pop())
     urllib.urlretrieve(url,dest,lambda nb, bs, fs, url=url: _pbhook(nb,bs,fs,url,dp))
  
 def _pbhook(numblocks, blocksize, filesize, url=None,dp=None):
@@ -203,6 +203,16 @@ def _(x, s):
         'unhide language (%s)': 30355,
         'day before': 30356,
         'day after': 30357,
+        'download': 30358,
+        'download select': 30359,
+        'download canceled': 30360,
+        'local copy': 30361,
+        'delete local copys': 30362,
+        'file already exists, overwrite?': 30363,
+        'download completed, play file now?': 30364,
+        'do you want do delete existing local copys?': 30365,
+        'skipped file (Operation not permitted)': 30366,
+        'skipped file (No such file or directory)': 30367,
         }
     if s in translations:
         return x.getLocalizedString(translations[s]) or s
@@ -236,8 +246,9 @@ class housekeeper:
             'otrAcceptAVI',
             'otrPreferCut',
             'otrPreferHQ', 
-            'otrPreferHD' ]
-        identstring = "0.1" #cacheversion
+            'otrPreferHD',
+            'otrDownloadFolder' ]
+        identstring = "0.2" #cacheversion
         for setting in settings:
             if self._xbmcaddon.getSetting(setting):
                 identstring += "#%s:%s" % (setting, self._xbmcaddon.getSetting(setting))
@@ -350,6 +361,7 @@ class creator:
         self._common = CommonFunctions
 
     def Notification(self, title, text):
+        print "%s: %s" % (title, text)
         return xbmc.executebuiltin('Notification("%s", "%s")' % (title, _(self._xbmcaddon, str(text))))
 
     def _createList(self, otr, scope):
@@ -1177,6 +1189,10 @@ class creator:
             else:
                 requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
 
+        if 'epgid' in parse_qs(self._url.query):
+            egid = parse_qs(self._url.query)['epgid'].pop()
+            self._cleanCache('epgid_%s' % egid, refresh=False)
+
         localfile = self._getLocalDownloadPath(requesturi)
         if os.access(localfile, os.F_OK):
             print "playing file %s" % localfile
@@ -1186,10 +1202,6 @@ class creator:
             if remoteurl:
                 print "playing url %s" % remoteurl
                 xbmc.executebuiltin("XBMC.PlayMedia(\"%s\")" % remoteurl, True)
-
-        if 'epgid' in parse_qs(self._url.query):
-            egid = parse_qs(self._url.query)['epgid'].pop()
-            self._cleanCache('epgid_%s' % egid)
 
         return True
 
@@ -1201,7 +1213,12 @@ class creator:
                 result.append(self._getLocalDownloadPath(element))
             return result
         else:
-            downdir = os.path.join(xbmc.translatePath('special://temp'), self._url.netloc)
+
+            if self._xbmcaddon.getSetting('otrDownloadFolder') in ['special://temp', '']:
+                downdir = os.path.join(xbmc.translatePath('special://temp'), self._url.netloc)
+            else:
+                downdir = self._xbmcaddon.getSetting('otrDownloadFolder')
+
             try:
                 if not os.path.exists(downdir):
                     os.mkdir(downdir)
@@ -1210,6 +1227,7 @@ class creator:
                 self.Notification(downdir, 'could not create dir (%s)' % str(e.strerror))
             except Exception, e:
                 print e
+
             return os.path.join(downdir, url.split('/').pop())
 
 
@@ -1244,8 +1262,14 @@ class creator:
             else:
                 if 'epgid' in parse_qs(self._url.query):
                     egid = parse_qs(self._url.query)['epgid'].pop()
-                    self._cleanCache('epgid_%s' % egid)
-
+                if self._xbmcaddon.getSetting('otrAskPlayAfterDownload') == 'true':
+                    if xbmcgui.Dialog().yesno(
+                        __TITLE__,
+                        _(self._xbmcaddon, 'download completed, play file now?'),
+                        str(filename) ):
+                            self._play(otr, target)
+                    else:
+                        self._cleanCache('epgid_%s' % egid)
         return True
         
 

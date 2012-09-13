@@ -19,6 +19,9 @@
         <setting type="sep" />
         <setting id="otrChannelsHidden"  type="text" default="" label="30106" />
         <setting id="otrLanguagesHidden" type="text" default="RU,FR,EN,IT,TR,PL,ES" label="30107" />
+        <setting type="sep" />
+        <setting id="otrAskPlayAfterDownload"  type="bool" default="true" label="30108" />	
+	<setting id="otrDownloadFolder" type="folder" source="" label="30109" />
     </category>
     <category label="30200">
         <setting id="otrPreferHD"  type="bool" default="false" label="30201" />	

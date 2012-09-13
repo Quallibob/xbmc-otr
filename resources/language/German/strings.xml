@@ -9,6 +9,8 @@
     <string id="30105">Vor dem Löschen von Aufträgen fragen</string>
     <string id="30106">Versteckte Sender (im Fernsehprogramm)</string>
     <string id="30107">Versteckte Sprachen (im Fernsehprogramm)</string>
+    <string id="30108">Datei nach dem Download abspielen?</string>
+    <string id="30109">Lokaler Download Ordner</string>
     <!-- Addon Quality Settings -->
     <string id="30200">Qualität</string>
     <string id="30201">HD Version in der Vorauswahl bevorzugen</string>
@@ -76,4 +78,14 @@
     <string id="30355">Zeige Sprache (%s)</string>
     <string id="30356">vorheriger Tag</string>
     <string id="30357">folgender Tag</string>
+    <string id="30358">Download</string>
+    <string id="30359">Downloadauswahl</string>
+    <string id="30360">Download abgebrochen</string>
+    <string id="30361">lokale Kopie</string>
+    <string id="30362">Lösche lokale Kopien</string>
+    <string id="30363">Datei existiert bereits, überschreiben?</string>
+    <string id="30364">Download abgeschlossen, datei jetzt abspielen?</string>
+    <string id="30365">Existierende lokale Kopien entfernenß</string>
+    <string id="30366">Datei übersprungen (Keine Berechtigungen)</string>
+    <string id="30367">Datei übersprungen (Datei/Ordner exisitiert nicht)</string>
 </strings>
