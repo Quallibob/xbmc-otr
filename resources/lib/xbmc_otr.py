@@ -422,7 +422,11 @@ class creator:
                 if 'TITLE2' in element: infos['plot'] += "\n%s" % element['TITLE2']
 
                 streamlist = {}
+                gotlocalcopy = False
                 for stream in stream_selection:
+                    if os.access(self._getLocalDownloadPath(stream['file']), os.F_OK):
+                        gotlocalcopy = True
+                        stream['name'] += " (%s)" % _(self._xbmcaddon, 'local copy')
                     streamlist[stream['name']] = stream['file']
                 streamlist = base64.urlsafe_b64encode(repr(streamlist))
 
@@ -432,41 +436,60 @@ class creator:
                         _(self._xbmcaddon, 'play'), 
                         "PlayWith()" )))
                 contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'download'), 
+                        "XBMC.RunPlugin(%s://%s/%s?epgid=%s&fileuri=%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'download',
+                            element['EPGID'],
+                            base64.urlsafe_b64encode(stream_preselect['file'])) )))
+                contextmenueitems.append (tuple((
                         _(self._xbmcaddon, 'stream select'), 
-                        "XBMC.RunPlugin(%s://%s/%s?list=%s&file=%s)" % (
+                        "XBMC.RunPlugin(%s://%s/%s?epgid=%s&streamlist=%s&file=%s)" % (
                             self._url.scheme,
                             self._url.netloc,
                             'streamselect',
+                            element['EPGID'],
                             streamlist,
                             base64.urlsafe_b64encode(label)) )))
                 contextmenueitems.append (tuple((
                         _(self._xbmcaddon, 'download select'), 
-                        "XBMC.RunPlugin(%s://%s/%s?list=%s&file=%s)" % (
+                        "XBMC.RunPlugin(%s://%s/%s?epgid=%s&streamlist=%s&file=%s)" % (
                             self._url.scheme,
                             self._url.netloc,
                             'downloadselect',
+                            element['EPGID'],
                             streamlist,
                             base64.urlsafe_b64encode(label)) )))
+                if gotlocalcopy: contextmenueitems.append (tuple((
+                        _(self._xbmcaddon, 'delete local copys'), 
+                        "XBMC.RunPlugin(%s://%s/%s?epgid=%s&streamlist=%s)" % (
+                            self._url.scheme,
+                            self._url.netloc,
+                            'deletelocalcopys',
+                            element['EPGID'],
+                            streamlist) )))
                 contextmenueitems.append (tuple((
                         _(self._xbmcaddon, 'refresh listing'),
                         "XBMC.RunPlugin(%s://%s/%s)" % (
                             self._url.scheme,
                             self._url.netloc,
                             'cleancache') )))
-                contextmenueitems.append (tuple((
-                        _(self._xbmcaddon, 'refresh element'),
-                        "XBMC.RunPlugin(%s://%s/%s?search=%%25%s)" % (
-                            self._url.scheme,
-                            self._url.netloc,
-                            'cleancache',
-                            element['EPGID']) )))
+                # contextmenueitems.append (tuple((
+                #         _(self._xbmcaddon, 'refresh element'),
+                #         "XBMC.RunPlugin(%s://%s/%s?search=%%25%s)" % (
+                #             self._url.scheme,
+                #             self._url.netloc,
+                #             'cleancache',
+                #             element['EPGID']) )))
                 contextmenueitems.append (tuple((
                         _(self._xbmcaddon, 'delete'), 
-                        "XBMC.RunPlugin(%s://%s/%s?epgid=%s)" % (
+                        "XBMC.RunPlugin(%s://%s/%s?epgid=%s&streamlist=%s)" % (
                             self._url.scheme,
                             self._url.netloc,
                             'deletejob',
-                            element['EPGID']) )))
+                            element['EPGID'],
+                            streamlist) )))
                 contextmenueitems.append (tuple((
                         _(self._xbmcaddon, 'userinfo'), 
                         "XBMC.RunPlugin(%s://%s/%s)" % (
@@ -786,7 +809,7 @@ class creator:
                     _(self._xbmcaddon, "scheduleJob: %s" % res) ) )
             return True
 
-    def _cleanCache(self, otr, search="%"):
+    def _cleanCache(self, otr, search="%", refresh=True):
         """
         cache aufraeumen
 
@@ -798,7 +821,7 @@ class creator:
         if 'search' in parse_qs(self._url.query):
             search = parse_qs(self._url.query)['search'].pop()
         cache.delete(search)
-        xbmc.executebuiltin("Container.Refresh")
+        if refresh: xbmc.executebuiltin("Container.Refresh")
         return True
 
     def _deleteJob(self, otr, ask=True):
@@ -817,6 +840,7 @@ class creator:
             otr.deleteJob( parse_qs(self._url.query)['epgid'].pop() )
             prdialog.update(100)
             prdialog.close()
+            self._deleteLocalCopys(otr, ask=True)
             xbmc.executebuiltin("Container.Refresh")
             xbmc.executebuiltin('Notification("%s", "%s")' % (
                 __TITLE__, 
@@ -1064,7 +1088,31 @@ class creator:
 
 
 
+    def _deleteLocalCopys(self, otr, ask=False):
+        if ask:
+            if not xbmcgui.Dialog().yesno(
+                __TITLE__,
+                _(self._xbmcaddon, 'do you want do delete existing local copys?')):
+                    return False
+            
+        streamlist = eval(base64.urlsafe_b64decode(parse_qs(self._url.query)['streamlist'].pop()))
+        for filepath in self._getLocalDownloadPath(streamlist.values()):
+            try:
+                if os.access(filepath, os.F_OK):
+                    os.remove(filepath)
+            except OSError, e:
+                self.Notification(filepath.split('/').pop(), 'skipped file (%s)' % e.strerror)
+            except IOError, e:
+                self.Notification(filepath.split('/').pop(), 'could not delete file (%s)' % e.strerror)
+            except Exception, e:
+                self.Notification(filepath.split('/').pop(), e)
+                raise e
 
+        if 'epgid' in parse_qs(self._url.query):
+            egid = parse_qs(self._url.query)['epgid'].pop()
+            self._cleanCache('epgid_%s' % egid)
+
+            
 
 
     def _selectStream(self, otr):
@@ -1076,7 +1124,7 @@ class creator:
         """
         mode = self._url.path.lstrip('/')
 
-        streamlist = eval(base64.urlsafe_b64decode(parse_qs(self._url.query)['list'].pop()))
+        streamlist = eval(base64.urlsafe_b64decode(parse_qs(self._url.query)['streamlist'].pop()))
         filename = base64.urlsafe_b64decode(parse_qs(self._url.query)['file'].pop())
         choice = xbmcgui.Dialog().select(filename, streamlist.keys())
         if choice >= 0:
@@ -1095,10 +1143,6 @@ class creator:
         prdialog = xbmcgui.DialogProgress()
         prdialog.create(_(self._xbmcaddon, 'downloadqueue'))
         prdialog.update(0)
-
-        if 'epgid' in parse_qs(self._url.query):
-            egid = parse_qs(self._url.query)['epgid'].pop()
-            cache.delete('epgid_%s' % egid)
 
         while True:
             try:
@@ -1125,6 +1169,7 @@ class creator:
                 return False
                 
     def _play(self, otr, requesturi=False):
+
         if not requesturi:
             if not 'fileuri' in parse_qs(self._url.query):
                 raise Exception('play without fileuri not possible')
@@ -1132,7 +1177,7 @@ class creator:
             else:
                 requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
 
-        localfile = self.getLocalDownloadPath(requesturi)
+        localfile = self._getLocalDownloadPath(requesturi)
         if os.access(localfile, os.F_OK):
             print "playing file %s" % localfile
             xbmc.executebuiltin("XBMC.PlayMedia(\"%s\")" % localfile, True)
@@ -1141,32 +1186,65 @@ class creator:
             if remoteurl:
                 print "playing url %s" % remoteurl
                 xbmc.executebuiltin("XBMC.PlayMedia(\"%s\")" % remoteurl, True)
+
+        if 'epgid' in parse_qs(self._url.query):
+            egid = parse_qs(self._url.query)['epgid'].pop()
+            self._cleanCache('epgid_%s' % egid)
+
         return True
 
 
-    def getLocalDownloadPath(self, url):
-        return os.path.join(xbmc.translatePath('special://temp'), url.split('/').pop())
+    def _getLocalDownloadPath(self, url):
+        if isinstance(url, list):
+            result = []
+            for element in url:
+                result.append(self._getLocalDownloadPath(element))
+            return result
+        else:
+            downdir = os.path.join(xbmc.translatePath('special://temp'), self._url.netloc)
+            try:
+                if not os.path.exists(downdir):
+                    os.mkdir(downdir)
+                    print "created dir %s" % downdir
+            except OSError,e :
+                self.Notification(downdir, 'could not create dir (%s)' % str(e.strerror))
+            except Exception, e:
+                print e
+            return os.path.join(downdir, url.split('/').pop())
 
-    def _download(self, otr, requesturi):
+
+
+    def _download(self, otr, requesturi=False):
+
+        if not requesturi:
+            if not 'fileuri' in parse_qs(self._url.query):
+                raise Exception('play without fileuri not possible')
+                return False
+            else:
+                requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
+
         url = self._downloadqueue(otr, requesturi)
         if url:
             filename = url.split('/').pop()
-            target = self.getLocalDownloadPath(url)
+            target = self._getLocalDownloadPath(url)
 
             if os.access(target, os.F_OK):
                 if not xbmcgui.Dialog().yesno(
                     __TITLE__,
                     _(self._xbmcaddon, 'file already exists, overwrite?'),
                     str(filename) ): return True
-            if not os.access(target, os.W_OK):
-                self.Notification(filename, 'could not write file')
-                return False
 
             try:
                 print "downloading url %s to %s" % (url, target)
                 DownloaderClass(url, target)
+            except IOError,e :
+                self.Notification(filename, 'could not write file (%s)' % str(e.strerror))
             except Exception, e:
                 self.Notification(filename, e)
+            else:
+                if 'epgid' in parse_qs(self._url.query):
+                    egid = parse_qs(self._url.query)['epgid'].pop()
+                    self._cleanCache('epgid_%s' % egid)
 
         return True
         
@@ -1188,7 +1266,7 @@ class creator:
                 'scheduling' : ['tvguide', 'searchpast', 'searchfuture'],
                 'scheduling/searchpast': self._createPastSearchList,
                 'scheduling/searchfuture': self._createFutureSearchList,
-                'scheduling/pasthighlights': self._createPastHightlightsList,
+                #'scheduling/pasthighlights': self._createPastHightlightsList,
                 'scheduling/tvguide': self._createProgrammList,
                 'recordings': self._createRecordingList,
                 'deletejob': self._deleteJob,
@@ -1196,7 +1274,9 @@ class creator:
                 'userinfo': self._showUserinfo,
                 'streamselect': self._selectStream,
                 'downloadselect': self._selectStream,
+                'deletelocalcopys': self._deleteLocalCopys,
                 'play': self._play,
+                'download': self._download,
                 'cleancache': self._cleanCache,
                 }
 
