@@ -100,8 +100,7 @@ def _pbhook(numblocks, blocksize, filesize, url=None,dp=None):
         percent = min((numblocks*blocksize*100)/filesize, 100)
         dp.update(percent)
     except:
-        percent = 100
-        dp.update(percent)
+        dp.close()
     if dp.iscanceled(): 
         dp.close()
         raise Exception('download canceled')
