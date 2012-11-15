@@ -68,7 +68,7 @@ class StorageServerDummy:
     def lock(self, *args):
         return False
 
-    def unlock(self, *arg):
+    def unlock(self, *args):
         return False
 
 
@@ -77,7 +77,7 @@ try:
     cache = StorageServer.StorageServer(__TITLE__, 7)
 except Exception, e:
     try:
-    	# local copy version from http://hg.tobiasussing.dk/hgweb.cgi/cachexbmc/ for apple tv integration
+        # local copy version from http://hg.tobiasussing.dk/hgweb.cgi/cachexbmc/ for apple tv integration
         import LocalStorageServer as StorageServer
         cache = StorageServer.StorageServer(__TITLE__, 7)
         print "LocalStorageServer loaded"
@@ -134,7 +134,7 @@ def getSizeStr(size):
     else: return "%d Bytes" % int(size)
 
 
-def _(x, s):
+def _(s):
     """
     Versucht einen nicht-lokalisierten String zu uebersetzen.
 
@@ -214,7 +214,7 @@ def _(x, s):
         'skipped file (No such file or directory)': 30367,
         }
     if s in translations:
-        return x.getLocalizedString(translations[s]) or s
+        return xbmcaddon.Addon().getLocalizedString(translations[s]) or s
     print("untranslated: %s" % s)
     return s
 
@@ -288,7 +288,7 @@ class housekeeper:
         if not len(username) or not len(password):
             xbmcgui.Dialog().ok(
                __TITLE__,
-               _(self._xbmcaddon, 'missing login credentials') )
+               _('missing login credentials') )
             raise Exception("missing login credentials")
 
         # otr object
@@ -305,8 +305,8 @@ class housekeeper:
             print "login failed (1): %s" % e
             xbmcgui.Dialog().ok(
                 __TITLE__,
-                _(self._xbmcaddon, 'login failed'),  
-                _(self._xbmcaddon, str(e)) )
+                _('login failed'),  
+                _(str(e)) )
             sys.exit(0)
         else:
             if login:
@@ -321,8 +321,8 @@ class housekeeper:
                     print "login failed (2): %s" % e
                     xbmcgui.Dialog().ok(
                         __TITLE__,
-                        _(self._xbmcaddon, 'login failed'), 
-                        _(self._xbmcaddon, str(e)) )
+                        _('login failed'), 
+                        _(str(e)) )
                     sys.exit(0)
                 else:
                     print("otr login successful")
@@ -361,7 +361,7 @@ class creator:
 
     def Notification(self, title, text):
         print "%s: %s" % (title, text)
-        return xbmc.executebuiltin('Notification("%s", "%s")' % (title, _(self._xbmcaddon, str(text))))
+        return xbmc.executebuiltin('Notification("%s", "%s")' % (title, _(str(text))))
 
     def _createList(self, otr, scope):
         """
@@ -437,17 +437,17 @@ class creator:
                 for stream in stream_selection:
                     if os.access(self._getLocalDownloadPath(stream['file']), os.F_OK):
                         gotlocalcopy = True
-                        stream['name'] += " (%s)" % _(self._xbmcaddon, 'local copy')
+                        stream['name'] += " (%s)" % _('local copy')
                     streamlist[stream['name']] = stream['file']
                 streamlist = base64.urlsafe_b64encode(repr(streamlist))
 
                 # contextmenue
                 contextmenueitems = []
                 contextmenueitems.append (tuple(( 
-                        _(self._xbmcaddon, 'play'), 
+                        _('play'), 
                         "PlayWith()" )))
                 contextmenueitems.append (tuple((
-                        _(self._xbmcaddon, 'download'), 
+                        _('download'), 
                         "XBMC.RunPlugin(%s://%s/%s?epgid=%s&fileuri=%s)" % (
                             self._url.scheme,
                             self._url.netloc,
@@ -455,7 +455,7 @@ class creator:
                             element['EPGID'],
                             base64.urlsafe_b64encode(stream_preselect['file'])) )))
                 contextmenueitems.append (tuple((
-                        _(self._xbmcaddon, 'stream select'), 
+                        _('stream select'), 
                         "XBMC.RunPlugin(%s://%s/%s?epgid=%s&streamlist=%s&file=%s)" % (
                             self._url.scheme,
                             self._url.netloc,
@@ -464,7 +464,7 @@ class creator:
                             streamlist,
                             base64.urlsafe_b64encode(label)) )))
                 contextmenueitems.append (tuple((
-                        _(self._xbmcaddon, 'download select'), 
+                        _('download select'), 
                         "XBMC.RunPlugin(%s://%s/%s?epgid=%s&streamlist=%s&file=%s)" % (
                             self._url.scheme,
                             self._url.netloc,
@@ -473,7 +473,7 @@ class creator:
                             streamlist,
                             base64.urlsafe_b64encode(label)) )))
                 if gotlocalcopy: contextmenueitems.append (tuple((
-                        _(self._xbmcaddon, 'delete local copys'), 
+                        _('delete local copys'), 
                         "XBMC.RunPlugin(%s://%s/%s?epgid=%s&streamlist=%s)" % (
                             self._url.scheme,
                             self._url.netloc,
@@ -481,20 +481,20 @@ class creator:
                             element['EPGID'],
                             streamlist) )))
                 contextmenueitems.append (tuple((
-                        _(self._xbmcaddon, 'refresh listing'),
+                        _('refresh listing'),
                         "XBMC.RunPlugin(%s://%s/%s)" % (
                             self._url.scheme,
                             self._url.netloc,
                             'cleancache') )))
                 # contextmenueitems.append (tuple((
-                #         _(self._xbmcaddon, 'refresh element'),
+                #         _('refresh element'),
                 #         "XBMC.RunPlugin(%s://%s/%s?search=%%25%s)" % (
                 #             self._url.scheme,
                 #             self._url.netloc,
                 #             'cleancache',
                 #             element['EPGID']) )))
                 contextmenueitems.append (tuple((
-                        _(self._xbmcaddon, 'delete'), 
+                        _('delete'), 
                         "XBMC.RunPlugin(%s://%s/%s?epgid=%s&streamlist=%s)" % (
                             self._url.scheme,
                             self._url.netloc,
@@ -502,7 +502,7 @@ class creator:
                             element['EPGID'],
                             streamlist) )))
                 contextmenueitems.append (tuple((
-                        _(self._xbmcaddon, 'userinfo'), 
+                        _('userinfo'), 
                         "XBMC.RunPlugin(%s://%s/%s)" % (
                             self._url.scheme,
                             self._url.netloc,
@@ -629,7 +629,7 @@ class creator:
 
         # progressdialog erzeuegen
         prdialog = xbmcgui.DialogProgress()
-        prdialog.create(_(self._xbmcaddon, 'loading recording list'))
+        prdialog.create(_('loading recording list'))
         prdialog.update(0)
 
         try:
@@ -640,8 +640,8 @@ class creator:
             prdialog.close()
             xbmcgui.Dialog().ok(
                     __TITLE__, 
-                    _(self._xbmcaddon, 'loading recording list failed'),
-                    _(self._xbmcaddon, str(e)) )
+                    _('loading recording list failed'),
+                    _(str(e)) )
             return []
         else:
             listing = []
@@ -680,12 +680,12 @@ class creator:
         """
         listing = []
         for element in subs:
-            li = xbmcgui.ListItem( label=_(self._xbmcaddon, element) )
+            li = xbmcgui.ListItem( label=_(element) )
             li.addContextMenuItems(
                 [ 
-                  ( _(self._xbmcaddon, 'refresh listing'), 
+                  ( _('refresh listing'), 
                     "Container.Refresh" ),
-                  ( _(self._xbmcaddon, 'userinfo'), 
+                  ( _('userinfo'), 
                     "XBMC.RunPlugin(%s://%s/%s)" % (
                         self._url.scheme,
                         self._url.netloc,
@@ -737,7 +737,7 @@ class creator:
         @type  otr: OtrHandler Instanz
         """
         listing = []
-        searchstring = self._common.getUserInput(_(self._xbmcaddon, 'search'), False)
+        searchstring = self._common.getUserInput(_('search'), False)
         if searchstring:
             for show in getKey(otr.getSearchListDict(searchstring, future=future), 'SHOW') or []:
                 try:
@@ -807,9 +807,9 @@ class creator:
         """
         if self._xbmcaddon.getSetting('otrAskSchedule') == 'true': ask = True
         if self._xbmcaddon.getSetting('otrAskSchedule') == 'false': ask = False
-        if not ask or xbmcgui.Dialog().yesno(__TITLE__, _(self._xbmcaddon, 'schedule job?')):
+        if not ask or xbmcgui.Dialog().yesno(__TITLE__, _('schedule job?')):
             prdialog = xbmcgui.DialogProgress()
-            prdialog.create(_(self._xbmcaddon, 'scheduling'))
+            prdialog.create(_('scheduling'))
             prdialog.update(0)
             res = otr.scheduleJob(parse_qs(self._url.query)['epgid'].pop())
             prdialog.update(100)
@@ -817,7 +817,7 @@ class creator:
             if len(res) > 0:
                 xbmc.executebuiltin('Notification("%s", "%s")' % (
                     __TITLE__, 
-                    _(self._xbmcaddon, "scheduleJob: %s" % res) ) )
+                    _("scheduleJob: %s" % res) ) )
             return True
 
     def _cleanCache(self, otr, search="%", refresh=True):
@@ -844,9 +844,9 @@ class creator:
         """
         if self._xbmcaddon.getSetting('otrAskDelete') == 'true': ask = True
         if self._xbmcaddon.getSetting('otrAskDelete') == 'false': ask = False
-        if not ask or xbmcgui.Dialog().yesno(__TITLE__, _(self._xbmcaddon, 'delete job?')):
+        if not ask or xbmcgui.Dialog().yesno(__TITLE__, _('delete job?')):
             prdialog = xbmcgui.DialogProgress()
-            prdialog.create(_(self._xbmcaddon, 'delete'))
+            prdialog.create(_('delete'))
             prdialog.update(0)
             otr.deleteJob( parse_qs(self._url.query)['epgid'].pop() )
             prdialog.update(100)
@@ -855,7 +855,7 @@ class creator:
             xbmc.executebuiltin("Container.Refresh")
             xbmc.executebuiltin('Notification("%s", "%s")' % (
                 __TITLE__, 
-                _(self._xbmcaddon, "job deleted") ) )
+                _("job deleted") ) )
             return True
 
     def _showUserinfo(self, otr):
@@ -867,10 +867,10 @@ class creator:
         """
         info = otr.getUserInfoDict()
         line1 = "%s" % (info['EMAIL'])
-        line2 = _(self._xbmcaddon, "status: %s (until %s)") % ( 
+        line2 = _("status: %s (until %s)") % ( 
             info['STATUS'],
             info['UNTILNICE'])
-        line3 = _(self._xbmcaddon, "decodings left: %s, gwp left: %s") % ( 
+        line3 = _("decodings left: %s, gwp left: %s") % ( 
             info['DECODINGS_LEFT'],
             info['GWP'])
         xbmcgui.Dialog().ok( __TITLE__, line1, line2, line3)
@@ -902,9 +902,9 @@ class creator:
             thisweek = thisweek - datetime.timedelta(days=thisweek.weekday())
             for weekdelta in range(-4, 0):
                 weekstart = thisweek+datetime.timedelta(weeks=weekdelta)
-                weekstring = " -" + _(self._xbmcaddon, weekdelta<-1 and "%s weeks" or "%s week") % (weekdelta*-1) 
-                month_start_name = _(self._xbmcaddon, weekstart.date().strftime("%B")) 
-                month_end_name = _(self._xbmcaddon, (weekstart.date()+datetime.timedelta(days=6)).strftime("%B"))
+                weekstring = " -" + _(weekdelta<-1 and "%s weeks" or "%s week") % (weekdelta*-1) 
+                month_start_name = _(weekstart.date().strftime("%B")) 
+                month_end_name = _((weekstart.date()+datetime.timedelta(days=6)).strftime("%B"))
                 weekstring += " (%s - %s)" % (
                         weekstart.date().strftime("%d. " + month_start_name + " %Y"), 
                         (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. " + month_end_name + " %Y")
@@ -922,13 +922,13 @@ class creator:
                 'week' in arglist and arglist['week'].pop() or 0))
             for day in range(7):
                 singleday = weekstart + datetime.timedelta(days=day)
-                weekday_name = _(self._xbmcaddon, singleday.date().strftime("%A"))
-                month_name = _(self._xbmcaddon, singleday.date().strftime("%B"))
+                weekday_name = _(singleday.date().strftime("%A"))
+                month_name = _(singleday.date().strftime("%B"))
                 day_uri = uri + '&' + urllib.urlencode({'day': int(time.mktime(singleday.timetuple()))})
                 listitem = xbmcgui.ListItem(label=singleday.date().strftime(weekday_name + " (%d. " + month_name + " %Y)"))
                 contextmenueitems = []
                 contextmenueitems.append ( tuple((
-                        _(self._xbmcaddon, 'show all channels'),
+                        _('show all channels'),
                         "Container.Update(%s&showall=true,True)" % day_uri )) )
                 listitem.addContextMenuItems(contextmenueitems, replaceItems=True )
                 if singleday.date() == datetime.date.today():
@@ -942,9 +942,9 @@ class creator:
             # wochenliste
             for weekdelta in range(1, 5):
                 weekstart = thisweek+datetime.timedelta(weeks=weekdelta)
-                weekstring = " +" + _(self._xbmcaddon, weekdelta>1 and "%s weeks" or "%s week") % (weekdelta)
-                month_start_name = _(self._xbmcaddon, weekstart.date().strftime("%B")) 
-                month_end_name = _(self._xbmcaddon, (weekstart.date()+datetime.timedelta(days=6)).strftime("%B"))
+                weekstring = " +" + _(weekdelta>1 and "%s weeks" or "%s week") % (weekdelta)
+                month_start_name = _(weekstart.date().strftime("%B")) 
+                month_end_name = _((weekstart.date()+datetime.timedelta(days=6)).strftime("%B"))
                 weekstring += " (%s - %s)" % (
                         weekstart.date().strftime("%d. " + month_start_name + " %Y"), 
                         (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. " + month_end_name + " %Y")
@@ -1008,27 +1008,27 @@ class creator:
                     showall = True
 
                 if not hiddenitem: contextmenueitems.append ( tuple((
-                    _(self._xbmcaddon, 'hide channel (%s)') % key,
+                    _('hide channel (%s)') % key,
                     "XBMC.RunPlugin(%s&hidechannel=%s)" % (
                         uri,
                         urllib.quote(key)) )) )
                 if hiddenitem and key in hidden_chan: contextmenueitems.append ( tuple((
-                    _(self._xbmcaddon, 'unhide channel (%s)') % key,
+                    _('unhide channel (%s)') % key,
                     "XBMC.RunPlugin(%s&unhidechannel=%s)" % (
                         uri,
                         urllib.quote(key)) )) )
                 if not hiddenitem: contextmenueitems.append ( tuple((
-                    _(self._xbmcaddon, 'hide language (%s)') % language,
+                    _('hide language (%s)') % language,
                     "XBMC.RunPlugin(%s&hidelanguage=%s)" % (
                         uri,
                         urllib.quote(language)) )) )
                 if hiddenitem and language in hidden_lang: contextmenueitems.append ( tuple((
-                    _(self._xbmcaddon, 'unhide language (%s)') % language,
+                    _('unhide language (%s)') % language,
                     "XBMC.RunPlugin(%s&unhidelanguage=%s)" % (
                         uri,
                         urllib.quote(language)) )) )
                 if not showall: contextmenueitems.append ( tuple((
-                        _(self._xbmcaddon, 'show all channels'),
+                        _('show all channels'),
                         "Container.Update(%s&showall=true,True)" % uri )) )
 
                 li = xbmcgui.ListItem(label=key, iconImage=getStationThumburl(key))
@@ -1053,7 +1053,7 @@ class creator:
 
             listing.append( [
                 uri.replace(str(selected_daystamp), str(selected_daystamp-86400)),
-                xbmcgui.ListItem(label=_(self._xbmcaddon, 'day before')),
+                xbmcgui.ListItem(label=_('day before')),
                 True] )
             
 
@@ -1089,7 +1089,7 @@ class creator:
 
             listing.append( [
                 uri.replace(str(selected_daystamp), str(selected_daystamp+86400)),
-                xbmcgui.ListItem(label=_(self._xbmcaddon, 'day after')),
+                xbmcgui.ListItem(label=_('day after')),
                 True] )
 
             return listing
@@ -1103,7 +1103,7 @@ class creator:
         if ask:
             if not xbmcgui.Dialog().yesno(
                 __TITLE__,
-                _(self._xbmcaddon, 'do you want do delete existing local copys?')):
+                _('do you want do delete existing local copys?')):
                     return False
             
         streamlist = eval(base64.urlsafe_b64decode(parse_qs(self._url.query)['streamlist'].pop()))
@@ -1152,7 +1152,7 @@ class creator:
         queuemax = 0;
         xbmc.executebuiltin("Dialog.Close(all,true)", True)
         prdialog = xbmcgui.DialogProgress()
-        prdialog.create(_(self._xbmcaddon, 'downloadqueue'))
+        prdialog.create(_('downloadqueue'))
         prdialog.update(0)
 
         while True:
@@ -1167,8 +1167,8 @@ class creator:
                 for step in reversed(range(1, 20)):
                     prdialog.update(
                         percent, 
-                        _(self._xbmcaddon, 'queueposition %s of %s') % (e.position, queuemax),
-                        _(self._xbmcaddon, 'refresh in %s sec') % int(step/2) )
+                        _('queueposition %s of %s') % (e.position, queuemax),
+                        _('refresh in %s sec') % int(step/2) )
                     if not prdialog.iscanceled():
                         time.sleep(0.5)
                     else:
@@ -1176,7 +1176,7 @@ class creator:
             except otr.foundDownloadErrorException, e:
                 xbmcgui.Dialog().ok(
                     "%s (%s)" % (__TITLE__, e.number),
-                    _(self._xbmcaddon, e.value) )
+                    _(e.value) )
                 return False
                 
     def _play(self, otr, requesturi=False):
@@ -1248,7 +1248,7 @@ class creator:
             if os.access(target, os.F_OK):
                 if not xbmcgui.Dialog().yesno(
                     __TITLE__,
-                    _(self._xbmcaddon, 'file already exists, overwrite?'),
+                    _('file already exists, overwrite?'),
                     str(filename) ): return True
 
             try:
@@ -1264,7 +1264,7 @@ class creator:
                 if self._xbmcaddon.getSetting('otrAskPlayAfterDownload') == 'true':
                     if xbmcgui.Dialog().yesno(
                         __TITLE__,
-                        _(self._xbmcaddon, 'download completed, play file now?'),
+                        _('download completed, play file now?'),
                         str(filename) ):
                             self._play(otr, target)
                     else:
@@ -1318,7 +1318,7 @@ class creator:
                             self._url.scheme,
                             self._url.netloc,
                             self._url.path),
-                        xbmcgui.ListItem( label=_(self._xbmcaddon, 'new version available') ),
+                        xbmcgui.ListItem( label=_('new version available') ),
                         False
                         ])
             return ret
