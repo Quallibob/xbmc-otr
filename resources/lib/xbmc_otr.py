@@ -11,19 +11,16 @@
 
 import os
 import sys
-import re
-import subprocess
 import xbmc
 import xbmcplugin
 import xbmcaddon
 import xbmcgui
 import OtrHandler
-import logging
 import urllib
-import urllib2
 import base64
 import time
 import datetime
+import types
 
 try:
     import CommonFunctions
@@ -33,10 +30,11 @@ except ImportError, e:
     print "LocalCommonFunctions loaded"
 
 try:
-    from cgi import parse_qs
-except ImportError:
-    print "parse_qs not in cgi"
     from urlparse import parse_qs
+except ImportError:
+    #noinspection PyDeprecation
+    from cgi import parse_qs
+
     
 
 __TITLE__ = 'onlinetvrecorder.com'
@@ -95,7 +93,7 @@ def DownloaderClass(url,dest):
     dp.create("Download", url.split('/').pop())
     urllib.urlretrieve(url,dest,lambda nb, bs, fs, url=url: _pbhook(nb,bs,fs,url,dp))
  
-def _pbhook(numblocks, blocksize, filesize, url=None,dp=None):
+def _pbhook(numblocks, blocksize, filesize, url=None, dp=None):
     try:
         percent = min((numblocks*blocksize*100)/filesize, 100)
         dp.update(percent)
@@ -138,8 +136,6 @@ def _(s):
     """
     Versucht einen nicht-lokalisierten String zu uebersetzen.
 
-    @param x: addon das befragt werden soll
-    @type  x: xbmcaddon.Addon Instance
     @param s: unlokalisierter String
     @type  s: string
     """
@@ -378,8 +374,6 @@ class creator:
 
             @param element: elementDict vom OtrHandler
             @type  element: dict
-            @param fileinfo: fileinfoDict vom OtrHandler
-            @type  fileinfo: dict
             """
 
             def getImageUrl(filename):
@@ -418,7 +412,7 @@ class creator:
                     }
 
                 # item detail infos
-                infos= {}
+                infos= dict()
                 infos['size'] = long(stream_preselect['size'])
                 infos['plot'] = "%s GWP (%s, %s, %s)\n" % (
                     stream_preselect['cost'], 
@@ -442,7 +436,7 @@ class creator:
                 streamlist = base64.urlsafe_b64encode(repr(streamlist))
 
                 # contextmenue
-                contextmenueitems = []
+                contextmenueitems = list()
                 contextmenueitems.append (tuple(( 
                         _('play'), 
                         "PlayWith()" )))
@@ -522,8 +516,8 @@ class creator:
             """
             aggregiert die informationen der verfuegbaren streams
             
-            @param streamelement: stream xml struktur die von otr kommt
-            @type  streamelement: dict
+            @param elementinfo: stream xml struktur die von otr kommt
+            @type  elementinfo: dict
             @param epgid: epgid der  aufnahme
             @type  epgid: string
             """
@@ -926,10 +920,9 @@ class creator:
                 month_name = _(singleday.date().strftime("%B"))
                 day_uri = uri + '&' + urllib.urlencode({'day': int(time.mktime(singleday.timetuple()))})
                 listitem = xbmcgui.ListItem(label=singleday.date().strftime(weekday_name + " (%d. " + month_name + " %Y)"))
-                contextmenueitems = []
-                contextmenueitems.append ( tuple((
-                        _('show all channels'),
-                        "Container.Update(%s&showall=true,True)" % day_uri )) )
+                contextmenueitems = [tuple((
+                    _('show all channels'),
+                    "Container.Update(%s&showall=true,True)" % day_uri ))]
                 listitem.addContextMenuItems(contextmenueitems, replaceItems=True )
                 if singleday.date() == datetime.date.today():
                     listitem.select(True)
@@ -942,7 +935,7 @@ class creator:
             # wochenliste
             for weekdelta in range(1, 5):
                 weekstart = thisweek+datetime.timedelta(weeks=weekdelta)
-                weekstring = " +" + _(weekdelta>1 and "%s weeks" or "%s week") % (weekdelta)
+                weekstring = " +" + _(weekdelta>1 and "%s weeks" or "%s week") % weekdelta
                 month_start_name = _(weekstart.date().strftime("%B")) 
                 month_end_name = _((weekstart.date()+datetime.timedelta(days=6)).strftime("%B"))
                 weekstring += " (%s - %s)" % (
@@ -1149,7 +1142,7 @@ class creator:
 
 
     def _downloadqueue(self, otr, requesturi):
-        queuemax = 0;
+        queuemax = 0
         xbmc.executebuiltin("Dialog.Close(all,true)", True)
         prdialog = xbmcgui.DialogProgress()
         prdialog.create(_('downloadqueue'))
@@ -1184,7 +1177,6 @@ class creator:
         if not requesturi:
             if not 'fileuri' in parse_qs(self._url.query):
                 raise Exception('play without fileuri not possible')
-                return False
             else:
                 requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
 
@@ -1236,12 +1228,11 @@ class creator:
         if not requesturi:
             if not 'fileuri' in parse_qs(self._url.query):
                 raise Exception('play without fileuri not possible')
-                return False
             else:
                 requesturi = base64.urlsafe_b64decode(parse_qs(self._url.query)['fileuri'].pop())
 
         url = self._downloadqueue(otr, requesturi)
-        if url:
+        if isinstance(url, str):
             filename = url.split('/').pop()
             target = self._getLocalDownloadPath(url)
 
@@ -1322,8 +1313,11 @@ class creator:
                         False
                         ])
             return ret
-        else:
+        elif isinstance(sub, types.MethodType):
             return sub(otr)
+        else:
+            print type(sub)
+            return []
 
 class sender:
     """
@@ -1343,7 +1337,7 @@ class sender:
     def send(self,listing):
         """
         Send output to XBMC
-        @param list listing - the list of items to display
+        @param listing - the list of items to display
         @return void
         """
         if isinstance(listing, list):
