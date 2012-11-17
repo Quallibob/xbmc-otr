@@ -14,10 +14,11 @@ import urllib
 import urllib2
 import hashlib
 import os
-import XmlDict
 import base64
 import socket
 import pprint
+import XmlDict
+import pah2Nahbae4cahzihach1aep
 
 try:
     from xml.etree import ElementTree
@@ -506,7 +507,6 @@ class OtrHandler:
             self.__otr_did  = did
             self.__otr_auth = authcode
         else:
-            import pah2Nahbae4cahzihach1aep
             self.__otr_auth = pah2Nahbae4cahzihach1aep.code()
             self.__otr_did  = 131
 

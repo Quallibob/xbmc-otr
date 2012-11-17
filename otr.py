@@ -7,22 +7,10 @@
     Description: Main program script for package
 """
 
-import os
-import sys
 import xbmcplugin
 import xbmcaddon
 
-
-#set our library path
-sys.path.insert(0, xbmc.translatePath( 
-	os.path.join( 
-		xbmcaddon.Addon().getAddonInfo('path'), 
-		'resources', 
-		'lib' ) ) )
-
-# local version as bugfix for http://bugs.python.org/issue9374
-import urlparse
-
+from call import call
 import xbmc_otr as worker
 
 def trace(
@@ -94,38 +82,31 @@ def trace(
 
 
 
-
-
-
 offlinerequests = [
-	"cleancache",
-	"scheduling",
-	"scheduling/pasthighlights",
-	"scheduling/searchpast",
-	"scheduling/searchfuture",
-	"scheduling/tvguide",
-	"streamselect",
-	"play",
-	"",
+	"/cleancache",
+	"/scheduling",
+	"/scheduling/pasthighlights",
+	"/scheduling/searchpast",
+	"/scheduling/searchfuture",
+	"/scheduling/tvguide",
+	"/streamselect",
+	"/play",
+	"/",
 	]
 
-try:
-    _url = urlparse.urlparse("%s%s#%s" % (sys.argv[0], sys.argv[2], sys.argv[1]))
+class NoException(Exception): pass
 
-    xbmc.log(_url.geturl())    
-    housekeeper = worker.housekeeper(_url)
-    creator = worker.creator(_url)
-    sender = worker.sender(_url)
-    
-    loginrequired = True
-    if _url.path.strip('/') in offlinerequests:
-        loginrequired = False
-    housekeeper.start(login=loginrequired)
-    otr = housekeeper.getOTR()
-    sender.send(creator.get(otr))
+
+try:
+    housekeeper = worker.housekeeper()
+    creator = worker.creator()
+    if call.path not in offlinerequests: housekeeper.login()
+    creator.eval(housekeeper.getOTR())
+    creator.send()
     housekeeper.end()
 
-except Exception, e:
+
+except NoException, e:
     xbmc.log("#### BEGIN OTR-XBMC EXCEPTION ####", xbmc.LOGERROR)
     to = trace(e)
     xbmc.log("%s(%s)" % (to['class'], to['message']), xbmc.LOGERROR)
