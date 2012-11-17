@@ -165,34 +165,16 @@ class housekeeper:
 
 
 class creator:
-    """
-    Responsible for creating the list of items that will get displayed
-    """
-    _common = None
+
     listing = []
 
     def __init__(self):
         """
         constructor
         """
+        self.listing = list()
 
-    def _createList(self, otr):
-        """
-        Create the dynamic list of all content
-        @param list dirContent - list of __PLAYLIST__ files in gpodder directory
-        @param string dir - gpodder directory location
-        @access private
-        @return list
-        """
-        archive = LocalArchive()
-        archive.load()
-        print "last: %s" % archive.LastFile(archive).last()
-        if archive.LastFile(archive).last() < 0 or archive.LastFile(archive).last() > 500:
-            archive.refresh(otr)
-        return []
-
-
-    def createDir(self, subs):
+    def _createDir(self, subs):
         """
         dir listing fuer uebersichten erzeugen
 
@@ -222,7 +204,37 @@ class creator:
         @param otr: OtrHandler
         @type  otr: OtrHandler Instanz
         """
-        return self._createList(otr)
+
+        def get_recording_listitem(archive, recording):
+
+            li = xbmcgui.ListItem(
+                recording['label'],
+                recording['filename'],
+                archive.getImageUrl(recording['epgid'], recording['iconImage']),
+                archive.getImageUrl(recording['epgid'], recording['thumbnailImage'])
+                )
+
+            return [
+                call.format(params={ 'epgid': recording['epgid'] }),
+                li,
+                True
+                ]
+
+
+        listing = list()
+        archive = LocalArchive()
+        archive.load()
+        print "last: %s" % archive.LastFile(archive).last()
+
+        if archive.LastFile(archive).last() < 0 or archive.LastFile(archive).last() > 3600:
+            archive.refresh(otr)
+
+        if not 'epgid' in call.params:
+            for epgid in archive.recordings:
+                listing.append(get_recording_listitem(archive, archive.recordings[epgid]))
+
+        return listing
+
 
     def _createFutureSearchList(self, otr): 
         """
@@ -739,7 +751,7 @@ class creator:
         #get the list
         sub = getKey(path, call.path)
         if isinstance(sub, list):
-            ret = self.createDir(sub)
+            ret = self._createDir(sub)
             if call.path == '/':
                 if otr.newVersionAvailable():
                     # main dir and new version available

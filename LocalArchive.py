@@ -6,6 +6,7 @@ import xbmcgui
 import os
 import sys
 import time
+import urllib
 
 
 import simplebmc
@@ -219,7 +220,7 @@ class LocalArchive:
         return path
 
 
-    def __getImageUrl(self, epgid, filename):
+    def getImageUrl(self, epgid, filename):
         """
         liefert dynamisch die thumbnail url zurueck
         """
@@ -230,7 +231,9 @@ class LocalArchive:
         else:
             try:
                 DownloaderClass(url_online, url_local)
-            except:
+                xbmc.log('wrote pic %s' % url_local)
+            except Exception, e:
+                xbmc.log('%s: %s' % (url_local, str(e)))
                 return url_online
             else:
                 return url_local
@@ -320,7 +323,7 @@ class LocalArchive:
             for epgid in self.recordings:
                 path = self.__getLocalEpgidPath(epgid)
                 try:
-                    json.dump(self.recordings, open(os.path.join(path, 'json.v1'), 'w+'))
+                    json.dump(self.recordings[epgid], open(os.path.join(path, 'json.v1'), 'w+'))
                 except Exception, e:
                     __sx__.Notification(path, str(e))
                 else:
@@ -330,11 +333,11 @@ class LocalArchive:
     def load(self):
         for filename in os.listdir(self.path):
             json_file = os.path.join(self.path, filename, 'json.v1')
-            if os.path.isfile(json_file):
-                self.recordings.update(
-                    {
-                        filename : json.load(open(json_file))
-                    } )
+            try:
+                if os.path.isfile(json_file):
+                    self.recordings[filename] = json.load(open(json_file))
+            except Exception, e:
+                xbmc.log("%s: %s" % (json_file, str(e)))
 
 
     def refresh(self, otr):
@@ -363,5 +366,5 @@ class LocalArchive:
             __sx__.Notification(self.path, 'could not create dir (%s)' % str(e.strerror))
             sys.exit(0)
         except Exception, e:
-            print e
+            xbmc.log("%s: %s" % (self.path, str(e)))
             sys.exit(0)
