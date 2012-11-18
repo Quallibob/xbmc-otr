@@ -11,7 +11,7 @@ import xbmcplugin
 import xbmcaddon
 
 from call import call
-import xbmc_otr as worker
+import XbmcOtr as worker
 
 def trace(
         e,
@@ -80,31 +80,14 @@ def trace(
     return ret
 
 
-
-
-offlinerequests = [
-	"/cleancache",
-	"/scheduling",
-	"/scheduling/pasthighlights",
-	"/scheduling/searchpast",
-	"/scheduling/searchfuture",
-	"/scheduling/tvguide",
-	"/streamselect",
-	"/play",
-	"/",
-	]
-
 class NoException(Exception): pass
-
 
 try:
     housekeeper = worker.housekeeper()
-    creator = worker.creator()
-    if call.path not in offlinerequests: housekeeper.login()
+    creator = worker.creator(login=housekeeper.loginIfRequired)
     creator.eval(housekeeper.getOTR())
     creator.send()
     housekeeper.end()
-
 
 except NoException, e:
     xbmc.log("#### BEGIN OTR-XBMC EXCEPTION ####", xbmc.LOGERROR)

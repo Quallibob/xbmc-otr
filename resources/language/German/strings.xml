@@ -11,6 +11,7 @@
     <string id="30107">Versteckte Sprachen (im Fernsehprogramm)</string>
     <string id="30108">Datei nach dem Download abspielen?</string>
     <string id="30109">Lokaler Download Ordner</string>
+    <string id="30110">Vor dem Löschen von lokalen Informationen fragen</string>
     <!-- Addon Quality Settings -->
     <string id="30200">Qualität</string>
     <string id="30201">HD Version in der Vorauswahl bevorzugen</string>
@@ -88,4 +89,6 @@
     <string id="30365">Existierende lokale Kopien entfernenß</string>
     <string id="30366">Datei übersprungen (Keine Berechtigungen)</string>
     <string id="30367">Datei übersprungen (Datei/Ordner exisitiert nicht)</string>
+    <string id="30368">Stream:</string>
+    <string id="30369">Lokale Kopie:</string>
 </strings>

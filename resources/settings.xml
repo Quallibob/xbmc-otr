@@ -15,7 +15,8 @@
         <setting id="otrTimeout" type="slider" label="30103" range="10,10,120" default="60" option="int"/>
         <setting type="sep" />
         <setting id="otrAskSchedule"  type="bool" default="false" label="30104" />	
-        <setting id="otrAskDelete"  type="bool" default="false" label="30105" />	
+        <setting id="otrAskDelete"  type="bool" default="false" label="30105" />
+        <setting id="otrAskDeleteLocal"  type="bool" default="false" label="30110" />
         <setting type="sep" />
         <setting id="otrChannelsHidden"  type="text" default="" label="30106" />
         <setting id="otrLanguagesHidden" type="text" default="RU,FR,EN,IT,TR,PL,ES" label="30107" />

@@ -72,12 +72,14 @@ def _(s):
         'download select': 30359,
         'download canceled': 30360,
         'local copy': 30361,
-        'delete local copys': 30362,
+        'delete local copies': 30362,
         'file already exists, overwrite?': 30363,
         'download completed, play file now?': 30364,
-        'do you want do delete existing local copys?': 30365,
+        'do you want do delete existing local copies?': 30365,
         'skipped file (Operation not permitted)': 30366,
         'skipped file (No such file or directory)': 30367,
+        'stream:': 30368,
+        'local copy:': 30369,
         }
     if s in translations:
         return xbmcaddon.Addon().getLocalizedString(translations[s]) or s

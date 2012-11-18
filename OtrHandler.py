@@ -37,7 +37,7 @@ class OtrHandler:
     """
     OTR Representation
     """
-    
+
     __session   = False
     __apiauth   = ""
     __subcode   = False
@@ -57,7 +57,7 @@ class OtrHandler:
             self.number = number
         def __str__(self):
             return repr(self.value)
-    
+
     class inDownloadqueueException(Exception):
         position = 0
         def __init__(self, value, position):
@@ -125,11 +125,14 @@ class OtrHandler:
         @param url: url to request
         @type  url: string
         """
-        print url.replace(self.__lastPassword, 'X'*len(self.__lastPassword))
+        if len(self.__lastPassword):
+            print url.replace(self.__lastPassword, 'X'*10)
+        else:
+            print url
         req = self.__url_request(url)
         req.add_header('User-Agent', 'XBMC OtrHandler')
-	try:
-	    resp = self.__url_urlopen(req)
+        try:
+            resp = self.__url_urlopen(req)
         except urllib2.URLError, e:
             raise Exception(pprint.pformat(e))
         return resp
@@ -149,7 +152,7 @@ class OtrHandler:
 
     def setOtrSubcode(self, subcode):
         self.__subcode = subcode
-        
+
     def getOtrSubcode(self):
         self.__subcode = self.__getUrl(URL_SUBCODE).read()
         return self.__subcode
@@ -283,7 +286,7 @@ class OtrHandler:
         except Exception, e:
             print str('tree="""%s"""\n' % lst)
             raise Exception(e)
-        
+
     def getRecordList(self, 
             showonly="recordings",
             orderby="time",
@@ -328,6 +331,7 @@ class OtrHandler:
         @param removed: show removed
         @type  removed: boolean
         """
+        if not self.__subcode: self.getOtrSubcode()
         requrl = "%s/downloader/api/request_list2.php?" % URL_OTR
         requrl += self.__apiauth
         requrl += "&showonly=%s" % showonly
@@ -367,6 +371,7 @@ class OtrHandler:
         @param filename: filename
         @type  filename: string
         """
+        if not self.__subcode: self.getOtrSubcode()
         requrl = "%s/downloader/api/request_file2.php?" % URL_OTR
         requrl += self.__apiauth
         requrl += "&epgid=%s" % base64.urlsafe_b64encode(epgid)
@@ -388,7 +393,10 @@ class OtrHandler:
 
         def getDownloadinfo(fileuri):
             apiuri  = fileuri.replace('/download/', '/api/', 1)
-            resp = self.__session = self.__getUrl(apiuri)
+            try:
+                resp = self.__session = self.__getUrl(apiuri)
+            except socket.timeout:
+                raise self.inDownloadqueueException('in downloadqueue', 0)
             ret = resp.read()
             downloadinfo = json.loads(ret)
             return downloadinfo
@@ -405,7 +413,7 @@ class OtrHandler:
 
         if 'queueposition' in downloadinfo:
             raise self.inDownloadqueueException('in downloadqueue', int(downloadinfo['queueposition']))
-        
+
         if 'error' in downloadinfo:
             number = downloadinfo['error']
             message = ""
@@ -417,7 +425,7 @@ class OtrHandler:
         print(downloadinfo)
         return False
 
-        
+
     def getPastHighlightsDict(self, *args, **kwargs):
         """
         wrapper for getRss to get past highlights
@@ -479,6 +487,7 @@ class OtrHandler:
         """
         get user info
         """
+        if not self.__subcode: self.getOtrSubcode()
         requrl = "%s/downloader/api/userinfo.php?" % URL_OTR
         requrl += self.__apiauth
         requrl += "&email=%s" % base64.urlsafe_b64encode(self.__lastUsername)

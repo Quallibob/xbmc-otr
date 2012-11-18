@@ -4,11 +4,11 @@ import xbmc
 import xbmcaddon
 import xbmcgui
 import os
+import shutil
 import sys
 import time
 import urllib
-
-
+import re
 import simplebmc
 from translations import _
 
@@ -18,24 +18,11 @@ except ImportError:
     import simplejson as json
 
 
+
 __addon__ = xbmcaddon.Addon()
 __title__ = 'onlinetvrecorder.com'
 __sx__ = simplebmc.Simplebmc()
 
-def DownloaderClass(url,dest):
-    dp = xbmcgui.DialogProgress()
-    dp.create("Download", url.split('/').pop())
-    urllib.urlretrieve(url,dest,lambda nb, bs, fs, url=url: _pbhook(nb,bs,fs,url,dp))
-
-def _pbhook(numblocks, blocksize, filesize, url=None, dp=None):
-    try:
-        percent = min((numblocks*blocksize*100)/filesize, 100)
-        dp.update(percent)
-    except:
-        dp.close()
-    if dp.iscanceled():
-        dp.close()
-        raise Exception('download canceled')
 
 
 def getSizeStr(size):
@@ -67,22 +54,12 @@ class LocalArchive:
     path = "."
     recordings = []
 
-    def __getLocalDownloadPath(self, url):
-        if isinstance(url, list):
-            result = []
-            for element in url:
-                result.append(self._getLocalDownloadPath(element))
-            return result
-        else:
-            return os.path.join(self.path, url.split('/').pop())
-
-
     def __getStreamSelection(self, otr, epgid):
         """
         aggregiert die informationen der verfuegbaren streams
 
-        @param stream_list: stream xml struktur die von otr kommt
-        @type  stream_list: dict
+        @param otr: OtrHandler
+        @type  otr: OtrHandler Instanz
         @param epgid: epgid der  aufnahme
         @type  epgid: string
         """
@@ -190,12 +167,14 @@ class LocalArchive:
 
     def __getOnlineElementDetails(self, otr, element):
 
+        # from pprint import pprint; pprint(element)
+
         item = {
             'epgid': element['EPGID'],
             'label': element['TITLE'],
             'filename': element['FILENAME'],
-            'iconImage': self.__getOnlineImageName(element['FILENAME'], '1'),
-            'thumbnailImage': self.__getOnlineImageName(element['FILENAME'], 'A')
+            'icon_image': self.__getOnlineImageName(element['FILENAME'], '1'),
+            'thumbnail_image': self.__getOnlineImageName(element['FILENAME'], 'A')
             }
 
         if 'BEGIN' in element:
@@ -225,25 +204,33 @@ class LocalArchive:
         liefert dynamisch die thumbnail url zurueck
         """
         url_local = os.path.join(self.__getLocalEpgidPath(epgid), filename)
-        url_online = 'http://thumbs.onlinetvrecorder.com/' + filename
         if os.path.isfile(url_local):
             return url_local
         else:
+
+            date_match = re.match('.*_(\d\d\.\d\d\.\d\d)_.*', filename)
+            if date_match:
+                date_part = "%s/" % date_match.group(1)
+            else:
+                date_part = ""
+
+            url_online = 'http://thumbs.onlinetvrecorder.com/' + date_part + filename
+            print url_online
             try:
-                DownloaderClass(url_online, url_local)
+                __sx__.Downloader(url_online, url_local, progress=False)
                 xbmc.log('wrote pic %s' % url_local)
+                return url_local
             except Exception, e:
                 xbmc.log('%s: %s' % (url_local, str(e)))
                 return url_online
-            else:
-                return url_local
 
     def __getOnlineImageName(self, filename, selection):
         """
         liefert thumbnail dateinamen zurueck
         """
-        url = filename.split('TVOON_DE')[0] + 'TVOON_DE' + '____'
-        return '%s%s.jpg' % (url, selection)
+        filename = filename.split('TVOON_DE')[0] + 'TVOON_DE' + '____'
+        filename = re.sub('^\d*_', '', filename)
+        return '%s%s.jpg' % (filename, selection)
 
 
     def __getOnlineList(self, otr):
@@ -300,8 +287,8 @@ class LocalArchive:
             return os.path.join(self.__archive.path, 'last')
 
         def touch(self):
+            last_file = os.path.join(self.__archive.path, 'last')
             try:
-                last_file = os.path.join(self.__archive.path, 'last')
                 open(last_file, 'w+').close()
             except Exception, e:
                 __sx__.Notification(last_file, str(e))
@@ -311,8 +298,8 @@ class LocalArchive:
                 return True
 
         def last(self):
+            last_file = os.path.join(self.__archive.path, 'last')
             try:
-                last_file = os.path.join(self.__archive.path, 'last')
                 return int(time.time() - os.stat(last_file).st_mtime)
             except Exception, e:
                 xbmc.log("%s: %s" % (last_file, str(e)))
@@ -329,16 +316,70 @@ class LocalArchive:
                 else:
                     xbmc.log('wrote %s' % path)
 
+    def __findLocalCopies(self, local_path):
+        for filename in os.listdir(local_path):
+            json_file = os.path.join(local_path, filename)
+            if filename.endswith('.json.v1'):
+                reference_file = json_file.rstrip('.json.v1')
+                try:
+                    file_info = json.load(open(json_file))
+                except Exception, e:
+                    xbmc.log("%s: %s" % (json_file, str(e)))
+                else:
+                    if 'type' in file_info and file_info['type'] == 'local_copy':
+                        file_info['file'] = reference_file
+                        file_info['file_type'] = reference_file.split('.').pop()
+                        file_info['json_file'] = json_file
+                        yield {file_info['date']:file_info}
+
+
+    def deleteLocalEpgidPath(self, epgid=False, file=False):
+
+        if epgid:
+            path = self.__getLocalEpgidPath(epgid, mkdir=False)
+            json_file = os.path.join(path, 'json.v1')
+        elif file:
+            path = file
+            json_file = path + '.json.v1'
+        else:
+            return False
+
+        if not os.path.isfile(json_file):
+            xbmc.log('could not delete %s, no info file found' % path)
+        else:
+            try:
+                if os.path.isfile(json_file):
+                    os.remove(json_file)
+                    if os.path.isfile(path):
+                        os.remove(path)
+                elif os.path.isdir(path):
+                    shutil.rmtree(path)
+            except Exception, e:
+                xbmc.log("failed to delete %s (%s)" % (path, str(e)))
+            else:
+                return True
+
+        return False
+
+
 
     def load(self):
         for filename in os.listdir(self.path):
             json_file = os.path.join(self.path, filename, 'json.v1')
             try:
                 if os.path.isfile(json_file):
-                    self.recordings[filename] = json.load(open(json_file))
+                    recording_info = json.load(open(json_file))
+                else:
+                    continue
             except Exception, e:
                 xbmc.log("%s: %s" % (json_file, str(e)))
-
+            else:
+                epgid = filename
+                local_path = os.path.join(self.path, epgid)
+                recording_info['copies'] = dict()
+                for copy in self.__findLocalCopies(local_path):
+                    recording_info['copies'].update(copy)
+                self.recordings[epgid] = recording_info
 
     def refresh(self, otr):
 
@@ -346,6 +387,35 @@ class LocalArchive:
             self.recordings[element['epgid']] = element
 
         self.__dumpRecordingInfo()
+
+    def downloadEpgidItem(self, epgid, name, url):
+        local_dir = self.__getLocalEpgidPath(epgid)
+        local_filename = str(url.split('/').pop())
+        local_path = os.path.join(local_dir, local_filename)
+
+        file_info = {
+            'name':  name,
+            'type': 'local_copy',
+            'date': int(time.time())
+        }
+
+        try:
+            xbmc.log("download: %s" % __sx__.Downloader(url, local_path))
+        except IOError,e :
+            __sx__.Notification(local_filename, 'could not write file (%s)' % str(e.strerror))
+        except Exception, e:
+            __sx__.Notification(local_filename, e)
+        else:
+            xbmc.log('wrote %s' % local_path)
+            json_filename = local_path +  '.json.v1'
+            try:
+                json.dump(file_info, open(json_filename, 'w+'))
+            except Exception, e:
+                __sx__.Notification(json_filename, str(e))
+            else:
+                xbmc.log('wrote %s' % json_filename)
+                return local_path
+        return False
 
 
     def __init__(self):

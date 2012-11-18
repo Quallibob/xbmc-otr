@@ -7,6 +7,11 @@
     <string id="30103">Timeout (in Seconds)</string>
     <string id="30104">Ask before scheduling Jobs</string>
     <string id="30105">Ask before deleting Jobs</string>
+    <string id="30106">Hidden channels (tv guide)</string>
+    <string id="30107">Hidden languages (tv guide)</string>
+    <string id="30108">Play File after Download</string>
+    <string id="30109">Local Download Folder</string>
+    <string id="30110">Ask before deleting local Information</string>
     <!-- Addon Quality Settings -->
     <string id="30200">Quality</string>
     <string id="30201">Prefer HD version in preselection</string>
@@ -15,10 +20,6 @@
     <string id="30204">Prefer Priority-Download</string>
     <string id="30205">Include AVI-files in preselection</string>
     <string id="30206">Show unsupported formats (NOT recommend)</string>
-    <string id="30106">Hidden channels (tv guide)</string>
-    <string id="30107">Hidden languages (tv guide)</string>
-    <string id="30108">Play File after Download</string>
-    <string id="30109">Local Download Folder</string>
     <!-- Message strings -->
     <string id="30300">Please set your OTR login in Addon Setup</string>
     <string id="30301">OTR Login Failed</string>
@@ -82,10 +83,12 @@
     <string id="30359">Downloadselection</string>
     <string id="30360">Download canceled</string>
     <string id="30361">local copy</string>
-    <string id="30362">Delete local copys</string>
+    <string id="30362">Delete local copies</string>
     <string id="30363">File already exists, overwrite?</string>
     <string id="30364">Download completed, play now?</string>
-    <string id="30365">Do you want do delete existing local copys?</string>
+    <string id="30365">Do you want do delete existing local copies?</string>
     <string id="30366">Skipped file (Operation not permitted)</string>
     <string id="30367">Skipped file (No such file or directory)</string>
+    <string id="30368">Stream:</string>
+    <string id="30369">Local copy:</string>
 </strings>
