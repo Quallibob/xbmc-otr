@@ -219,14 +219,6 @@ class LocalArchive:
         return item
 
 
-    def __getLocalEpgidPath(self, epgid, mkdir=True):
-        path = os.path.join(self.path, epgid)
-        if not os.path.exists(path) and mkdir:
-            os.mkdir(path)
-            print "created dir %s" % path
-        return path
-
-
     def __getOnlineImageName(self, filename, selection):
         """
         liefert thumbnail dateinamen zurueck
@@ -280,19 +272,40 @@ class LocalArchive:
         return listing
 
 
-    def __dumpRecordingInfo(self):
+    def __cleanupOnlineinfoFromAllLocalCopies(self):
+        for epgid in self.__findAllRecordingInfo():
+            json_file = self.__getEpgidJsonFile(epgid)
+            recording_info = json.load(open(json_file))
+            recording_info['streams'] = {}
+            try:
+                json.dump(recording_info, open(json_file, 'w+'))
+            except Exception, e:
+                __sx__.Notification(json_file, str(e))
+            else:
+                xbmc.log('wrote %s' % json_file)
+
+
+    def __dumpAllRecordingInfo(self):
         if self.LastFile(self).touch():
             for epgid in self.recordings:
                 path = self.__getLocalEpgidPath(epgid)
                 try:
-                    json.dump(self.recordings[epgid], open(os.path.join(path, 'json.v1'), 'w+'))
+                    json.dump(self.recordings[epgid], open(self.__getEpgidJsonFile(epgid), 'w+'))
                 except Exception, e:
                     __sx__.Notification(path, str(e))
                 else:
                     xbmc.log('wrote %s' % path)
 
 
-    def __findLocalCopies(self, local_path):
+    def __getLocalEpgidPath(self, epgid, mkdir=True):
+        path = os.path.join(self.path, epgid)
+        if not os.path.exists(path) and mkdir:
+            os.mkdir(path)
+            print "created dir %s" % path
+        return path
+
+
+    def __findEpgidLocalCopies(self, local_path):
         for filename in os.listdir(local_path):
             json_file = os.path.join(local_path, filename)
             if filename.endswith('.json.v1'):
@@ -309,11 +322,32 @@ class LocalArchive:
                         yield {file_info['date']:file_info}
 
 
+    def __getEpgidJsonFile(self, epgid):
+        path = self.__getLocalEpgidPath(epgid, mkdir=False)
+        json_file = os.path.join(path, 'json.v1')
+        return json_file
+
+    def __findAllRecordingInfo(self):
+        for filename in os.listdir(self.path):
+            json_file = self.__getEpgidJsonFile(filename)
+            try:
+                if os.path.isfile(json_file):
+                    if not isinstance(json.load(open(json_file)), dict):
+                        continue
+                else:
+                    continue
+            except Exception, e:
+                xbmc.log("%s: %s" % (json_file, str(e)))
+            else:
+                epgid = filename
+                yield epgid
+
+
     def deleteLocalEpgidPath(self, epgid=False, file=False):
 
         if epgid:
             path = self.__getLocalEpgidPath(epgid, mkdir=False)
-            json_file = os.path.join(path, 'json.v1')
+            json_file = self.__getEpgidJsonFile(epgid)
         elif file:
             path = file
             json_file = path + '.json.v1'
@@ -395,30 +429,23 @@ class LocalArchive:
 
 
     def load(self):
-        for filename in os.listdir(self.path):
-            json_file = os.path.join(self.path, filename, 'json.v1')
-            try:
-                if os.path.isfile(json_file):
-                    recording_info = json.load(open(json_file))
-                else:
-                    continue
-            except Exception, e:
-                xbmc.log("%s: %s" % (json_file, str(e)))
-            else:
-                epgid = filename
+        for epgid in self.__findAllRecordingInfo():
+                recording_info = json.load(open(self.__getEpgidJsonFile(epgid)))
                 local_path = os.path.join(self.path, epgid)
                 recording_info['copies'] = dict()
-                for copy in self.__findLocalCopies(local_path):
+                for copy in self.__findEpgidLocalCopies(local_path):
                     recording_info['copies'].update(copy)
                 self.recordings[epgid] = recording_info
 
 
     def refresh(self, otr):
 
+        self.__cleanupOnlineinfoFromAllLocalCopies()
+
         for element in self.__getOnlineList(otr):
             self.recordings[element['epgid']] = element
 
-        self.__dumpRecordingInfo()
+        self.__dumpAllRecordingInfo()
 
 
     def __init__(self):

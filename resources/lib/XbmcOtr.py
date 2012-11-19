@@ -19,7 +19,7 @@ import urllib
 import time
 import datetime
 import types
-import LocalCommonFunctions as CommonFunctions\
+import LocalCommonFunctions as CommonFunctions
 import LocalArchive
 import OtrHandler
 import Simplebmc
@@ -29,8 +29,9 @@ from Call import call
 
 
 try:
+    #noinspection PyUnresolvedReferences
     import CommonFunctions
-except ImportError, e:
+except ImportError:
     # local copy version from http://hg.tobiasussing.dk/hgweb.cgi/commonxbmc/ for apple tv integration
     print "LocalCommonFunctions loaded"
 
@@ -192,6 +193,7 @@ class creator:
                 True] )
         return listing
 
+
     def _createRecordingList(self, otr): 
         """
         wrapper um createList fuer recordings aufzurufen
@@ -209,23 +211,19 @@ class creator:
                 archive.getImageUrl(recording['epgid'], recording['thumbnail_image'])
                 )
 
-            contextmenueitems = []
-            contextmenueitems.append (tuple((
+            contextmenueitems = [tuple((
                 _('delete local copies'),
                 "XBMC.RunPlugin(\"%s\")" % call.format('/deletelocalcopies', params={'epgid': recording['epgid']})
-                ) ))
-            contextmenueitems.append (tuple((
+                )), tuple((
                 _('delete'),
                 "XBMC.RunPlugin(\"%s\")" % call.format('/deletejob', params={'epgid': recording['epgid']})
-                ) ))
-            contextmenueitems.append (tuple((
+                )), tuple((
                 _('refresh listing'),
                 "XBMC.RunPlugin(\"%s\")" % call.format('/refreshlisting', params={'epgid': recording['epgid']})
-                ) ))
-            contextmenueitems.append (tuple((
+                )), tuple((
                 _('userinfo'),
                 "XBMC.RunPlugin(\"%s\")" % call.format('/userinfo')
-                ) ))
+                ))]
             li.addContextMenuItems(contextmenueitems, replaceItems=True )
 
             infos = dict(
@@ -253,21 +251,18 @@ class creator:
                     archive.getImageUrl(recording['epgid'], recording['thumbnail_image'])
                     )
 
-                contextmenueitems = []
-                contextmenueitems.append (tuple((
+                contextmenueitems = [tuple((
                     _('play'),
-                    "PlayWith()" )))
-                contextmenueitems.append (tuple((
+                    "PlayWith()" )), tuple((
                     _('download'),
                     "XBMC.RunPlugin(\"%s\")" % call.format('/download', params={
                         'url': recording['streams'][stream]['file'],
                         'epgid': recording['epgid'],
                         'name': recording['streams'][stream]['name']
-                        }) ) ))
-                contextmenueitems.append (tuple((
+                    }) )), tuple((
                     _('userinfo'),
                     "XBMC.RunPlugin(\"%s\")" % call.format('/userinfo')
-                    ) ))
+                    ))]
                 li.addContextMenuItems(contextmenueitems, replaceItems=True )
 
                 yield [
@@ -283,24 +278,22 @@ class creator:
             for copy in recording['copies'].keys():
 
                 li = xbmcgui.ListItem(
-                    "%s %s" % (_('local copy:') + recording['copies'][copy]['name']),
+                    "%s %s" % (_('local copy:'), recording['copies'][copy]['name']),
                     '',
                     archive.getImageUrl(recording['epgid'], recording['icon_image']),
                     archive.getImageUrl(recording['epgid'], recording['thumbnail_image'])
                 )
 
-                contextmenueitems = []
-                contextmenueitems.append (tuple((
+                contextmenueitems = [tuple((
                     _('play'),
-                    "PlayWith()" )))
-                contextmenueitems.append (tuple((
+                    "PlayWith()" )), tuple((
                     _('delete'),
-                "XBMC.RunPlugin(\"%s\")" % call.format('/deletelocalcopies', params={'file': recording['copies'][copy]['file']})
-                    ) ))
-                contextmenueitems.append (tuple((
+                    "XBMC.RunPlugin(\"%s\")" % call.format('/deletelocalcopies',
+                        params={'file': recording['copies'][copy]['file']})
+                    )), tuple((
                     _('userinfo'),
                     "XBMC.RunPlugin(\"%s\")" % call.format('/userinfo')
-                    ) ))
+                    ))]
                 li.addContextMenuItems(contextmenueitems, replaceItems=True )
 
                 yield [
@@ -313,7 +306,7 @@ class creator:
 
 
         listing = list()
-        archive = LocalArchive()
+        archive = LocalArchive.LocalArchive()
         archive.load()
         print "last: %s" % archive.LastFile(archive).last()
 
@@ -343,6 +336,7 @@ class creator:
         """
         return self._createSearchList(otr, future=True)
 
+
     def _createPastSearchList(self, otr): 
         """
         wrapper um createSearchList fuer die Vergangenheit aufzurufen
@@ -364,9 +358,10 @@ class creator:
         searchstring = __common__.getUserInput(_('search'), False)
         if searchstring:
             for show in getKey(otr.getSearchListDict(searchstring, future=future), 'SHOW') or []:
+                #noinspection PyBroadException
                 try:
                     duration = (int(show['END']) - int(show['BEGIN'])) / 60
-                except Exception, e:
+                except Exception:
                     duration = False
                 elementname = ""
                 elementname += "%s: " % show['STATION']
@@ -407,6 +402,7 @@ class creator:
                 li.addContextMenuItems([], replaceItems=True )
             listing.append( [call.format('/schedulejob', {'epgid':item['epg_id']}), li, False] )
         return listing
+
 
     def _scheduleJob(self, otr, ask=True):
         """
@@ -457,6 +453,7 @@ class creator:
         return True
 
 
+    #noinspection PyUnusedLocal
     def _deleteLocalCopies(self, otr):
 
         if not __addon__.getSetting('otrAskDeleteLocal') == 'false':
@@ -465,7 +462,7 @@ class creator:
                 _('do you want do delete existing local copies?')):
                     return False
 
-        archive = LocalArchive()
+        archive = LocalArchive.LocalArchive()
         if 'epgid' in call.params and call.params['epgid']:
             archive.deleteLocalEpgidPath(epgid=call.params['epgid'])
         elif 'file' in call.params and call.params['file']:
@@ -473,12 +470,12 @@ class creator:
         xbmc.executebuiltin("Container.Refresh")
         return True
 
+
     def _refreshListing(self, otr):
         self.__login()
-        archive = LocalArchive()
+        archive = LocalArchive.LocalArchive()
         archive.refresh(otr)
         xbmc.executebuiltin("Container.Refresh")
-
 
 
     def _showUserinfo(self, otr):
@@ -518,7 +515,7 @@ class creator:
             thisweek = thisweek - datetime.timedelta(days=thisweek.weekday())
             for weekdelta in range(-4, 0):
                 weekstart = thisweek+datetime.timedelta(weeks=weekdelta)
-                weekstring = " -" + _(weekdelta<-1 and "%s weeks" or "%s week") % (weekdelta*-1) 
+                weekstring = " -" + _(weekdelta<-1 and "%s weeks" or "%s week") % str(weekdelta*-1)
                 month_start_name = _(weekstart.date().strftime("%B")) 
                 month_end_name = _((weekstart.date()+datetime.timedelta(days=6)).strftime("%B"))
                 weekstring += " (%s - %s)" % (
@@ -700,7 +697,6 @@ class creator:
         return None
 
 
-
     def _downloadqueue(self, otr, requesturi):
         queuemax = 0
         #xbmc.executebuiltin("Dialog.Close(all,true)", True)
@@ -731,28 +727,34 @@ class creator:
                     "%s (%s)" % (__title__, e.number),
                     _(e.value) )
                 return False
-                
+
+
     def _play(self, otr, url=False):
         if not url:
-            url = self._downloadqueue(otr, call.params['url'])
+            url = call.params['url']
+
+        if not os.path.isfile(url):
+            url = self._downloadqueue(otr, url)
+
         if url:
             print "playing url %s" % url
             xbmc.Player().play(url)
         return True
 
 
-    def _download(self, otr, requesturi=False):
-        remoteurl = self._downloadqueue(otr, call.params['url'])
-        if remoteurl:
-            archive = LocalArchive()
-            localpath = archive.downloadEpgidItem(call.params['epgid'], call.params['name'], remoteurl)
-            if localpath and __addon__.getSetting('otrAskPlayAfterDownload') == 'true':
+    def _download(self, otr, remote_url=False):
+        if not remote_url:
+            remote_url = self._downloadqueue(otr, call.params['url'])
+        if isinstance(remote_url, str):
+            archive = LocalArchive.LocalArchive()
+            local_path = archive.downloadEpgidItem(call.params['epgid'], call.params['name'], remote_url)
+            if local_path and __addon__.getSetting('otrAskPlayAfterDownload') == 'true':
                 xbmc.executebuiltin("Container.Refresh")
                 if xbmcgui.Dialog().yesno(
                     __title__,
                     _('download completed, play file now?'),
-                    str(remoteurl.split('/').pop()) ):
-                    self._play(otr, localpath)
+                    str(remote_url.split('/').pop()) ):
+                    self._play(otr, local_path)
         return True
 
 
