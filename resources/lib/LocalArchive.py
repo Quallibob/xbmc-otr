@@ -7,10 +7,10 @@ import os
 import shutil
 import sys
 import time
-import urllib
 import re
-import simplebmc
-from translations import _
+
+from Translations import _
+import Simplebmc
 
 try:
     import json
@@ -18,11 +18,9 @@ except ImportError:
     import simplejson as json
 
 
-
 __addon__ = xbmcaddon.Addon()
 __title__ = 'onlinetvrecorder.com'
-__sx__ = simplebmc.Simplebmc()
-
+__sx__ = Simplebmc.Simplebmc()
 
 
 def getSizeStr(size):
@@ -53,6 +51,36 @@ class LocalArchive:
 
     path = "."
     recordings = []
+
+    class LastFile:
+
+        __archive = None
+
+        def __init__(self, archive):
+            self.__archive = archive
+
+        def getFilename(self):
+            return os.path.join(self.__archive.path, 'last')
+
+        def touch(self):
+            last_file = os.path.join(self.__archive.path, 'last')
+            try:
+                open(last_file, 'w+').close()
+            except Exception, e:
+                __sx__.Notification(last_file, str(e))
+                return False
+            else:
+                xbmc.log('touched %s' % last_file)
+                return True
+
+        def last(self):
+            last_file = os.path.join(self.__archive.path, 'last')
+            try:
+                return int(time.time() - os.stat(last_file).st_mtime)
+            except Exception, e:
+                xbmc.log("%s: %s" % (last_file, str(e)))
+                return -1
+
 
     def __getStreamSelection(self, otr, epgid):
         """
@@ -199,31 +227,6 @@ class LocalArchive:
         return path
 
 
-    def getImageUrl(self, epgid, filename):
-        """
-        liefert dynamisch die thumbnail url zurueck
-        """
-        url_local = os.path.join(self.__getLocalEpgidPath(epgid), filename)
-        if os.path.isfile(url_local):
-            return url_local
-        else:
-
-            date_match = re.match('.*_(\d\d\.\d\d\.\d\d)_.*', filename)
-            if date_match:
-                date_part = "%s/" % date_match.group(1)
-            else:
-                date_part = ""
-
-            url_online = 'http://thumbs.onlinetvrecorder.com/' + date_part + filename
-            print url_online
-            try:
-                __sx__.Downloader(url_online, url_local, progress=False)
-                xbmc.log('wrote pic %s' % url_local)
-                return url_local
-            except Exception, e:
-                xbmc.log('%s: %s' % (url_local, str(e)))
-                return url_online
-
     def __getOnlineImageName(self, filename, selection):
         """
         liefert thumbnail dateinamen zurueck
@@ -276,34 +279,6 @@ class LocalArchive:
 
         return listing
 
-    class LastFile:
-
-        __archive = None
-
-        def __init__(self, archive):
-            self.__archive = archive
-
-        def getFilename(self):
-            return os.path.join(self.__archive.path, 'last')
-
-        def touch(self):
-            last_file = os.path.join(self.__archive.path, 'last')
-            try:
-                open(last_file, 'w+').close()
-            except Exception, e:
-                __sx__.Notification(last_file, str(e))
-                return False
-            else:
-                xbmc.log('touched %s' % last_file)
-                return True
-
-        def last(self):
-            last_file = os.path.join(self.__archive.path, 'last')
-            try:
-                return int(time.time() - os.stat(last_file).st_mtime)
-            except Exception, e:
-                xbmc.log("%s: %s" % (last_file, str(e)))
-                return -1
 
     def __dumpRecordingInfo(self):
         if self.LastFile(self).touch():
@@ -315,6 +290,7 @@ class LocalArchive:
                     __sx__.Notification(path, str(e))
                 else:
                     xbmc.log('wrote %s' % path)
+
 
     def __findLocalCopies(self, local_path):
         for filename in os.listdir(local_path):
@@ -348,10 +324,10 @@ class LocalArchive:
             xbmc.log('could not delete %s, no info file found' % path)
         else:
             try:
-                if os.path.isfile(json_file):
-                    os.remove(json_file)
-                    if os.path.isfile(path):
-                        os.remove(path)
+                if os.path.isfile(path):
+                    os.remove(path)
+                    if os.path.isfile(json_file):
+                        os.remove(json_file)
                 elif os.path.isdir(path):
                     shutil.rmtree(path)
             except Exception, e:
@@ -361,32 +337,6 @@ class LocalArchive:
 
         return False
 
-
-
-    def load(self):
-        for filename in os.listdir(self.path):
-            json_file = os.path.join(self.path, filename, 'json.v1')
-            try:
-                if os.path.isfile(json_file):
-                    recording_info = json.load(open(json_file))
-                else:
-                    continue
-            except Exception, e:
-                xbmc.log("%s: %s" % (json_file, str(e)))
-            else:
-                epgid = filename
-                local_path = os.path.join(self.path, epgid)
-                recording_info['copies'] = dict()
-                for copy in self.__findLocalCopies(local_path):
-                    recording_info['copies'].update(copy)
-                self.recordings[epgid] = recording_info
-
-    def refresh(self, otr):
-
-        for element in self.__getOnlineList(otr):
-            self.recordings[element['epgid']] = element
-
-        self.__dumpRecordingInfo()
 
     def downloadEpgidItem(self, epgid, name, url):
         local_dir = self.__getLocalEpgidPath(epgid)
@@ -416,6 +366,59 @@ class LocalArchive:
                 xbmc.log('wrote %s' % json_filename)
                 return local_path
         return False
+
+
+    def getImageUrl(self, epgid, filename):
+        """
+        liefert dynamisch die thumbnail url zurueck
+        """
+        url_local = os.path.join(self.__getLocalEpgidPath(epgid), filename)
+        if os.path.isfile(url_local):
+            return url_local
+        else:
+
+            date_match = re.match('.*_(\d\d\.\d\d\.\d\d)_.*', filename)
+            if date_match:
+                date_part = "%s/" % date_match.group(1)
+            else:
+                date_part = ""
+
+            url_online = 'http://thumbs.onlinetvrecorder.com/' + date_part + filename
+            print url_online
+            try:
+                __sx__.Downloader(url_online, url_local, progress=False)
+                xbmc.log('wrote pic %s' % url_local)
+                return url_local
+            except Exception, e:
+                xbmc.log('%s: %s' % (url_local, str(e)))
+                return url_online
+
+
+    def load(self):
+        for filename in os.listdir(self.path):
+            json_file = os.path.join(self.path, filename, 'json.v1')
+            try:
+                if os.path.isfile(json_file):
+                    recording_info = json.load(open(json_file))
+                else:
+                    continue
+            except Exception, e:
+                xbmc.log("%s: %s" % (json_file, str(e)))
+            else:
+                epgid = filename
+                local_path = os.path.join(self.path, epgid)
+                recording_info['copies'] = dict()
+                for copy in self.__findLocalCopies(local_path):
+                    recording_info['copies'].update(copy)
+                self.recordings[epgid] = recording_info
+
+
+    def refresh(self, otr):
+
+        for element in self.__getOnlineList(otr):
+            self.recordings[element['epgid']] = element
+
+        self.__dumpRecordingInfo()
 
 
     def __init__(self):

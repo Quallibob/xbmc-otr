@@ -17,8 +17,7 @@ import os
 import base64
 import socket
 import pprint
-import XmlDict
-import pah2Nahbae4cahzihach1aep
+from resources.lib import XmlDict, pah2Nahbae4cahzihach1aep
 
 try:
     from xml.etree import ElementTree

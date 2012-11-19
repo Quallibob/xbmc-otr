@@ -16,23 +16,22 @@ import xbmcplugin
 import xbmcaddon
 import xbmcgui
 import urllib
-import base64
 import time
 import datetime
 import types
+import LocalCommonFunctions as CommonFunctions\
+import LocalArchive
 import OtrHandler
-import simplebmc
+import Simplebmc
 
-from translations import _
-from LocalArchive import LocalArchive
-from call import call
+from Translations import _
+from Call import call
 
 
 try:
     import CommonFunctions
 except ImportError, e:
     # local copy version from http://hg.tobiasussing.dk/hgweb.cgi/commonxbmc/ for apple tv integration
-    import LocalCommonFunctions as CommonFunctions
     print "LocalCommonFunctions loaded"
 
 try:
@@ -44,7 +43,7 @@ except ImportError:
 
 __title__ = 'onlinetvrecorder.com'
 __addon__ = xbmcaddon.Addon()
-__sx__ = simplebmc.Simplebmc()
+__sx__ = Simplebmc.Simplebmc()
 __common__ = CommonFunctions
 
 

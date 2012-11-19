@@ -3,7 +3,7 @@ __author__ = 'fep'
 import xbmc
 import xbmcgui
 import urllib
-from translations import _
+from resources.lib.Translations import _
 
 
 class Simplebmc:

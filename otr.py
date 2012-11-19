@@ -9,9 +9,19 @@
 
 import xbmcplugin
 import xbmcaddon
+import xbmc
+import sys
+import inspect
+from resources.lib import XbmcOtr as worker
 
-from call import call
-import XbmcOtr as worker
+#import os
+#sys.path.append(
+#    os.path.join(
+#        xbmcaddon.Addon().getAttribute('path'),
+#        'resources',
+#        'lib'
+#        )
+#    )
 
 def trace(
         e,
@@ -29,8 +39,6 @@ def trace(
                         "locals={locals}" +
                         "): " +
                         "{code}"):
-    import sys
-    import inspect
 
     def getLine(filename, line):
         try:
