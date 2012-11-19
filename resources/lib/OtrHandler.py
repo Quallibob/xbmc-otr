@@ -104,6 +104,7 @@ class OtrHandler:
                     pass
             opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.__url_cookie))
             urllib2.install_opener(opener)
+            #opener.addheaders = [('User-agent', 'XBMC/OtrHandler')]
             self.__url_request = Request
             self.__url_urlopen = urlopen
 
@@ -129,7 +130,7 @@ class OtrHandler:
         else:
             print url
         req = self.__url_request(url)
-        req.add_header('User-Agent', 'XBMC OtrHandler')
+        req.add_header('User-Agent', 'XBMC/OtrHandler')
         try:
             resp = self.__url_urlopen(req)
         except urllib2.URLError, e:

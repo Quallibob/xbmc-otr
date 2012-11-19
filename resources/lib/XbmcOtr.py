@@ -745,7 +745,8 @@ class creator:
     def _download(self, otr, remote_url=False):
         if not remote_url:
             remote_url = self._downloadqueue(otr, call.params['url'])
-        if isinstance(remote_url, str):
+            xbmc.log('got remote download url <%s> %s' % (type(remote_url), remote_url))
+        if isinstance(remote_url, str) or isinstance(remote_url, unicode):
             archive = LocalArchive.LocalArchive()
             local_path = archive.downloadEpgidItem(call.params['epgid'], call.params['name'], remote_url)
             if local_path and __addon__.getSetting('otrAskPlayAfterDownload') == 'true':

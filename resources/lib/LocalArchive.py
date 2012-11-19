@@ -23,20 +23,6 @@ __title__ = 'onlinetvrecorder.com'
 __sx__ = Simplebmc.Simplebmc()
 
 
-def getSizeStr(size):
-    """
-    Wandelt einen Groessenangabe in Bytes in einen String mit passender
-    Menschenlesbaren Groessenangabe um.
-
-    @param size: Groesse in Bytes
-    @type  size: number
-    """
-    if   int(size) > 1099511627776: return "%.3f TB" % float(int(size) / 1099511627776.0)
-    elif int(size) > 1073741824: return "%.3f GB" % float(int(size) / 1073741824.0)
-    elif int(size) > 1048576: return "%.3f MB" % float(int(size) / 1048576.0)
-    elif int(size) > 1024: return "%.3f KB" % float(int(size) / 1024.0)
-    else: return "%d Bytes" % int(size)
-
 
 def getKey(obj, *elements):
     for element in elements:
@@ -110,7 +96,7 @@ class LocalArchive:
             if not stype: return False
 
             size = getKey(stream_element, 'SIZE')
-            size_string = getSizeStr(long(size)*1024)
+            size_string = __sx__.humanSize(long(size)*1024)
             url  = getKey(stream_element, stype)
             gwp  = getKey(stream_element, 'GWPCOSTS', stype)
 
@@ -272,17 +258,20 @@ class LocalArchive:
         return listing
 
 
-    def __cleanupOnlineinfoFromAllLocalCopies(self):
+    def __cleanupAllLocalCopies(self):
         for epgid in self.__findAllRecordingInfo():
-            json_file = self.__getEpgidJsonFile(epgid)
-            recording_info = json.load(open(json_file))
-            recording_info['streams'] = {}
-            try:
-                json.dump(recording_info, open(json_file, 'w+'))
-            except Exception, e:
-                __sx__.Notification(json_file, str(e))
+            if len(list(self.__findEpgidLocalCopies(self.__getLocalEpgidPath(epgid)))) < 1:
+                self.deleteLocalEpgidPath(epgid=epgid)
             else:
-                xbmc.log('wrote %s' % json_file)
+                json_file = self.__getEpgidJsonFile(epgid)
+                recording_info = json.load(open(json_file))
+                recording_info['streams'] = {}
+                try:
+                    json.dump(recording_info, open(json_file, 'w+'))
+                except Exception, e:
+                    __sx__.Notification(json_file, str(e))
+                else:
+                    xbmc.log('wrote %s' % json_file)
 
 
     def __dumpAllRecordingInfo(self):
@@ -420,7 +409,7 @@ class LocalArchive:
             url_online = 'http://thumbs.onlinetvrecorder.com/' + date_part + filename
             print url_online
             try:
-                __sx__.Downloader(url_online, url_local, progress=False)
+                __sx__.Downloader(url_online, url_local, progress=False, background=True)
                 xbmc.log('wrote pic %s' % url_local)
                 return url_local
             except Exception, e:
@@ -440,7 +429,7 @@ class LocalArchive:
 
     def refresh(self, otr):
 
-        self.__cleanupOnlineinfoFromAllLocalCopies()
+        self.__cleanupAllLocalCopies()
 
         for element in self.__getOnlineList(otr):
             self.recordings[element['epgid']] = element
