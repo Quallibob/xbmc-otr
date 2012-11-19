@@ -22,6 +22,7 @@ from resources.lib import XmlDict, pah2Nahbae4cahzihach1aep
 try:
     from xml.etree import ElementTree
 except ImportError:
+    #noinspection PyUnresolvedReferences
     import ElementTree
 
 try: import simplejson as json
@@ -85,6 +86,7 @@ class OtrHandler:
                 Request = ClientCookie.Request
                 self.__url_cookie = ClientCookie.MozillaCookieJar()
                 if path and os.path.isfile(path):
+                    #noinspection PyBroadException
                     try:
                         self.__url_cookie.load(path)
                     except Exception, e:
@@ -98,6 +100,7 @@ class OtrHandler:
             Request = urllib2.Request
             self.__url_cookie = cookielib.MozillaCookieJar()
             if path and os.path.isfile(path):
+                #noinspection PyBroadException,PyUnusedLocal
                 try:
                     self.__url_cookie.load(path)
                 except Exception, e:
@@ -141,6 +144,7 @@ class OtrHandler:
         """
         check for new version
         """
+        #noinspection PyBroadException,PyUnusedLocal
         try:
             master = self.__getUrl(VERSION_CHECK % VERSION).read()
             if str(master) == "ok":
@@ -160,11 +164,6 @@ class OtrHandler:
     def __setAPIAuthKey(self):
         """
         set internal api access code
-
-        @param did: programm code
-        @type  did: int
-        @param code: access code
-        @type  code: string
         """
         if not self.__subcode: self.getOtrSubcode()
         checksum = hashlib.md5(self.__otr_auth % self.__subcode).hexdigest()
@@ -192,6 +191,7 @@ class OtrHandler:
             raise Exception(resp)
         else:
             if self.__url_cookiepath:
+                #noinspection PyBroadException,PyUnusedLocal
                 try:
                     self.__url_cookie.save(self.__url_cookiepath)
                 except Exception, e:
@@ -355,6 +355,7 @@ class OtrHandler:
         wrapper for getFileInfo
         """
         lst = self.getFileInfo(*args, **kwargs)
+        #noinspection PyUnusedLocal
         try:
             return self.__getXMLDict( lst )
         except Exception, e:
@@ -426,12 +427,13 @@ class OtrHandler:
         return False
 
 
-    def getPastHighlightsDict(self, *args, **kwargs):
+    def getPastHighlightsDict(self):
         """
         wrapper for getRss to get past highlights
         """
         url = "%s/rss/highlights_past.php" % URL_OTR
-        lst = self.getRss(url, *args, **kwargs)
+        lst = self.getRss(url)
+        #noinspection PyUnusedLocal
         try:
             return self.__getXMLDict( lst )
         except Exception, e:
@@ -452,6 +454,7 @@ class OtrHandler:
         wrapper for getSearchList
         """
         lst = self.getSearchList(*args, **kwargs)
+        #noinspection PyUnusedLocal
         try:
             return self.__getXMLDict( lst )
         except Exception, e:
@@ -473,11 +476,12 @@ class OtrHandler:
         resp = self.__session = self.__getUrl(requrl)
         return resp.read()
 
-    def getUserInfoDict(self, *args, **kwargs):
+    def getUserInfoDict(self):
         """
         wrapper for getUserInfo
         """
-        lst = self.getUserInfo(*args, **kwargs)
+        lst = self.getUserInfo()
+        #noinspection PyUnusedLocal
         try:
             return self.__getXMLDict( lst )
         except Exception, e:
@@ -523,14 +527,12 @@ class OtrHandler:
 
 if __name__ == '__main__':
 
-    from pprint import pprint
-
     otr = OtrHandler()
     otr.login('', '')
     recordlist = otr.getRecordListDict()
     if 'FILE' in recordlist:
         for f in recordlist['FILE']:
-            pprint(f)
+            pprint.pprint(f)
             fi = otr.getFileInfoDict(f['EPGID'], f['ID'], f['FILENAME'])
-            pprint(fi)
+            pprint.pprint(fi)
 

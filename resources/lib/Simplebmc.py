@@ -4,6 +4,7 @@ import xbmc
 import xbmcgui
 import urllib2
 import threading
+import os
 from resources.lib.Translations import _
 
 
@@ -21,7 +22,7 @@ class Simplebmc:
 
     def humanSize(self, num):
         for x in ['bytes','KB','MB','GB','TB','PB','EB', 'ZB']:
-            if num < 1024.0 and num > -1024.0:
+            if 1024.0 > num > -1024.0:
                 return "%3.1f%s" % (num, x)
             num /= 1024.0
         return "%3.1f%s" % (num, 'YB')
@@ -117,10 +118,10 @@ class Simplebmc:
             request.add_header('User-Agent', 'XBMC/OtrHandler')
 
             def download(request):
-                response = urllib2.urlopen()
+                response = urllib2.urlopen(request)
                 self.size = self.chunk_read(response)
 
-            if background:
+            if background is True:
                 bg = Simplebmc().Background()
                 bg(download, request)
             else:
