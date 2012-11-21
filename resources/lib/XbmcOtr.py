@@ -251,18 +251,24 @@ class creator:
                     archive.getImageUrl(recording['epgid'], recording['thumbnail_image'])
                     )
 
-                contextmenueitems = [tuple((
+                contextmenueitems = []
+                contextmenueitems.append( tuple((
                     _('play'),
-                    "PlayWith()" )), tuple((
-                    _('download'),
-                    "XBMC.RunPlugin(\"%s\")" % call.format('/download', params={
-                        'url': recording['streams'][stream]['file'],
-                        'epgid': recording['epgid'],
-                        'name': recording['streams'][stream]['name']
-                    }) )), tuple((
+                    "PlayWith()" )))
+
+                if not str(recording['streams'][stream]['file'].split('/').pop()) in recording['copies']:
+                    contextmenueitems.append( tuple((
+                        _('download'),
+                        "XBMC.RunPlugin(\"%s\")" % call.format('/download', params={
+                            'url': recording['streams'][stream]['file'],
+                            'epgid': recording['epgid'],
+                            'name': recording['streams'][stream]['name']
+                        }) )) )
+
+                contextmenueitems.append( tuple((
                     _('userinfo'),
                     "XBMC.RunPlugin(\"%s\")" % call.format('/userinfo')
-                    ))]
+                    )) )
                 li.addContextMenuItems(contextmenueitems, replaceItems=True )
 
                 yield [

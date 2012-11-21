@@ -309,7 +309,7 @@ class LocalArchive:
                         file_info['file'] = reference_file
                         file_info['file_type'] = reference_file.split('.').pop()
                         file_info['json_file'] = json_file
-                        yield {file_info['date']:file_info}
+                        yield {file_info['file_name']:file_info}
 
 
     def __getEpgidJsonFile(self, epgid):
@@ -369,6 +369,7 @@ class LocalArchive:
 
         file_info = {
             'name':  name,
+            'file_name': local_filename,
             'type': 'local_copy',
             'date': int(time.time())
         }
