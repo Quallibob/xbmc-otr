@@ -3,7 +3,6 @@ __author__ = 'fep'
 import xbmc
 import xbmcaddon
 import xbmcgui
-import os
 import shutil
 import sys
 import time
@@ -11,6 +10,7 @@ import re
 
 from Translations import _
 import Simplebmc
+import Vfs as vfs
 
 try:
     import json
@@ -33,6 +33,7 @@ def getKey(obj, *elements):
             return False
     return obj
 
+class NoException(Exception): pass
 
 class Archive:
 
@@ -48,12 +49,14 @@ class Archive:
             self.__archive = archive
 
         def getFilename(self):
-            return os.path.join(self.__archive.path, 'last')
+            return vfs.path.join(self.__archive.path, 'last')
 
         def touch(self):
-            last_file = os.path.join(self.__archive.path, 'last')
+            last_file = vfs.path.join(self.__archive.path, 'last')
             try:
-                open(last_file, 'w+').close()
+                last_file_object = vfs.File(last_file, 'w')
+                last_file_object.write(str(int(time.time())))
+                last_file_object.close()
             except Exception, e:
                 __sx__.Notification(last_file, str(e))
                 return False
@@ -62,9 +65,12 @@ class Archive:
                 return True
 
         def last(self):
-            last_file = os.path.join(self.__archive.path, 'last')
+            last_file = vfs.path.join(self.__archive.path, 'last')
             try:
-                return int(time.time() - os.stat(last_file).st_mtime)
+                last_file_object = vfs.File(last_file, 'r')
+                last_content = last_file_object.read()
+                last_file_object.close()
+                return int(time.time() - int(__sx__.noNull(last_content)))
             except Exception, e:
                 xbmc.log("%s: %s" % (last_file, str(e)))
                 return -1
@@ -266,10 +272,10 @@ class Archive:
                 self.deleteLocalEpgidPath(epgid=epgid)
             else:
                 json_file = self.__getEpgidJsonFile(epgid)
-                recording_info = json.load(open(json_file))
+                recording_info = json.loads( __sx__.noNull(vfs.File(json_file).read()) )
                 recording_info['streams'] = {}
                 try:
-                    json.dump(recording_info, open(json_file, 'w+'))
+                    vfs.File(json_file, 'w').write(json.dumps(recording_info))
                 except Exception, e:
                     __sx__.Notification(json_file, str(e))
                 else:
@@ -281,7 +287,7 @@ class Archive:
             for epgid in self.recordings:
                 path = self.__getLocalEpgidPath(epgid)
                 try:
-                    json.dump(self.recordings[epgid], open(self.__getEpgidJsonFile(epgid), 'w+'))
+                    vfs.File(self.__getEpgidJsonFile(epgid), 'w').write(json.dumps(self.recordings[epgid]))
                 except Exception, e:
                     __sx__.Notification(path, str(e))
                 else:
@@ -289,20 +295,21 @@ class Archive:
 
 
     def __getLocalEpgidPath(self, epgid, mkdir=True):
-        path = os.path.join(self.path, epgid)
-        if not os.path.exists(path) and mkdir:
-            os.mkdir(path)
+        path = vfs.path.join(self.path, epgid)
+        if not vfs.exists(path) and mkdir:
+            vfs.mkdir(path)
             print "created dir %s" % path
         return path
 
 
     def __findEpgidLocalCopies(self, local_path):
-        for filename in os.listdir(local_path):
-            json_file = os.path.join(local_path, filename)
-            if filename.endswith('.json.v1'):
+        for file_name in vfs.listdir(local_path)[1]:
+            if file_name.endswith('.json.v1'):
+                json_file = vfs.path.join(local_path, file_name)
                 reference_file = json_file.rstrip('.json.v1')
+                print '##' + str(reference_file)
                 try:
-                    file_info = json.load(open(json_file))
+                    file_info = json.loads( __sx__.noNull(vfs.File(json_file).read()) )
                 except Exception, e:
                     xbmc.log("%s: %s" % (json_file, str(e)))
                 else:
@@ -315,22 +322,22 @@ class Archive:
 
     def __getEpgidJsonFile(self, epgid):
         path = self.__getLocalEpgidPath(epgid, mkdir=False)
-        json_file = os.path.join(path, 'json.v1')
+        json_file = vfs.path.join(path, 'json.v1')
         return json_file
 
     def __findAllRecordingInfo(self):
-        for filename in os.listdir(self.path):
-            json_file = self.__getEpgidJsonFile(filename)
+        for dir_name in vfs.listdir(self.path)[0]:
+            json_file = self.__getEpgidJsonFile(dir_name)
             try:
-                if os.path.isfile(json_file):
-                    if not isinstance(json.load(open(json_file)), dict):
+                if vfs.exists(json_file):
+                    if not isinstance(json.loads( __sx__.noNull(vfs.File(json_file).read()) ), dict):
                         continue
                 else:
                     continue
             except Exception, e:
                 xbmc.log("%s: %s" % (json_file, str(e)))
             else:
-                epgid = filename
+                epgid = dir_name
                 yield epgid
 
 
@@ -345,16 +352,19 @@ class Archive:
         else:
             return False
 
-        if not os.path.isfile(json_file):
+        if not vfs.exists(json_file):
             xbmc.log('could not delete %s, no info file found' % path)
+            return False
+
         else:
             try:
-                if os.path.isfile(path):
-                    os.remove(path)
-                    if os.path.isfile(json_file):
-                        os.remove(json_file)
-                elif os.path.isdir(path):
-                    shutil.rmtree(path)
+                if file:
+                    if vfs.exists(path):
+                        vfs.delete(path)
+                    if vfs.exists(json_file):
+                        vfs.delete(json_file)
+                elif epgid and vfs.exists(path):
+                    vfs.rmdir(path)
             except Exception, e:
                 xbmc.log("failed to delete %s (%s)" % (path, str(e)))
             else:
@@ -366,7 +376,7 @@ class Archive:
     def downloadEpgidItem(self, epgid, name, url):
         local_dir = self.__getLocalEpgidPath(epgid)
         local_filename = str(url.split('/').pop())
-        local_path = os.path.join(local_dir, local_filename)
+        local_path = vfs.path.join(local_dir, local_filename)
 
         file_info = {
             'name':  name,
@@ -379,13 +389,13 @@ class Archive:
             xbmc.log("download: %s" % __sx__.Downloader(url, local_path))
         except IOError,e :
             __sx__.Notification(local_filename, 'could not write file (%s)' % str(e.strerror))
-        except Exception, e:
+        except NoException, e:
             __sx__.Notification(local_filename, e)
         else:
             xbmc.log('wrote %s' % local_path)
             json_filename = local_path +  '.json.v1'
             try:
-                json.dump(file_info, open(json_filename, 'w+'))
+                vfs.File(json_filename, 'w').write(json.dumps(file_info))
             except Exception, e:
                 __sx__.Notification(json_filename, str(e))
             else:
@@ -398,8 +408,8 @@ class Archive:
         """
         liefert dynamisch die thumbnail url zurueck
         """
-        url_local = os.path.join(self.__getLocalEpgidPath(epgid), filename)
-        if os.path.isfile(url_local):
+        url_local = vfs.path.join(self.__getLocalEpgidPath(epgid), filename)
+        if vfs.exists(url_local):
             return url_local
         else:
 
@@ -422,12 +432,12 @@ class Archive:
 
     def load(self):
         for epgid in self.__findAllRecordingInfo():
-                recording_info = json.load(open(self.__getEpgidJsonFile(epgid)))
-                local_path = os.path.join(self.path, epgid)
-                recording_info['copies'] = dict()
-                for copy in self.__findEpgidLocalCopies(local_path):
-                    recording_info['copies'].update(copy)
-                self.recordings[epgid] = recording_info
+            recording_info = json.loads( __sx__.noNull(vfs.File(self.__getEpgidJsonFile(epgid)).read()) )
+            local_path = vfs.path.join(self.path, epgid)
+            recording_info['copies'] = dict()
+            for copy in self.__findEpgidLocalCopies(local_path):
+                recording_info['copies'].update(copy)
+            self.recordings[epgid] = recording_info
 
 
     def refresh(self, otr):
@@ -446,13 +456,13 @@ class Archive:
 
         # set path
         if __addon__.getSetting('otrDownloadFolder') in ['special://temp', '']:
-            self.path = os.path.join(xbmc.translatePath('special://temp'), __addon__.getAddonInfo('id'))
+            self.path = vfs.path.join(xbmc.translatePath('special://temp'), __addon__.getAddonInfo('id'))
         else:
             self.path = __addon__.getSetting('otrDownloadFolder')
 
         try:
-            if not os.path.exists(self.path):
-                os.mkdir(self.path)
+            if not vfs.exists(self.path):
+                vfs.mkdir(self.path)
                 print "created dir %s" % self.path
         except OSError,e :
             __sx__.Notification(self.path, 'could not create dir (%s)' % str(e.strerror))

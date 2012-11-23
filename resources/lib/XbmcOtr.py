@@ -705,7 +705,6 @@ class creator:
 
     def _downloadqueue(self, otr, requesturi):
         queuemax = 0
-        #xbmc.executebuiltin("Dialog.Close(all,true)", True)
         prdialog = xbmcgui.DialogProgress()
         prdialog.create(_('downloadqueue'))
         prdialog.update(0)

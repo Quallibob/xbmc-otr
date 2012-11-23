@@ -4,8 +4,9 @@ import xbmc
 import xbmcgui
 import urllib2
 import threading
-import os
+import re
 from resources.lib.Translations import _
+import Vfs as vfs
 
 
 class Simplebmc:
@@ -95,18 +96,18 @@ class Simplebmc:
                 if self.progress:
                     if self.progress.iscanceled():
                         self.destination_file_handler.close()
-                        os.remove(self.destination_file_path)
+                        vfs.delete(self.destination_file_path)
                         self.progress.close()
 
                 if report_hook:
-                    self.destination_file_handler.write(chunk)
+                    self.destination_file_handler.write( chunk )
                     report_hook(bytes_so_far, total_size)
 
             return bytes_so_far
 
         def __init__(self, url, dest, progress=True, background=False):
 
-            self.destination_file_handler = open(dest, 'wb')
+            self.destination_file_handler = vfs.File(dest, 'wb')
             self.destination_file_path = dest
             self.destination_file_name = url.split('/').pop()
 
@@ -126,6 +127,13 @@ class Simplebmc:
                 bg(download, request)
             else:
                 download(request)
+
+
+    def noNull(self, string):
+        #return re.sub('\0', '', string)
+        return string.rstrip('\x00')
+
+
 
 
 
