@@ -2,8 +2,7 @@ import xbmc
 import xbmcvfs
 import os
 
-ALLOW_FRODO=False
-
+ALLOW_FRODO=True
 
 try:
     import json
@@ -103,6 +102,10 @@ print File
 class Path:
 
     def join(self, *args):
-        return os.path.join(*args)
+        if '://' in args[0]:
+            return '/'.join( [a.rstrip('/') for a in args] )
+        else:
+            return os.path.join(*args)
+
 
 path = Path()

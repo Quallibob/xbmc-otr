@@ -9,7 +9,6 @@
     Description: Worker class library
 """
 
-import os
 import sys
 import xbmc
 import xbmcplugin
@@ -26,6 +25,7 @@ import Simplebmc
 
 from Translations import _
 from Call import call
+import Vfs as vfs
 
 
 try:
@@ -127,10 +127,6 @@ class housekeeper:
 
         # eigentlicher login
         try:
-            coockie = os.path.join(
-                        xbmc.translatePath('special://temp'),
-                        '%s%s' % (__title__, '.cookie') )
-            self._otr.setCookie(coockie)
             self._otr.login(username, password)
         except Exception, e:
             print "login failed (2): %s" % e
@@ -256,14 +252,15 @@ class creator:
                     _('play'),
                     "PlayWith()" )))
 
-                if not str(recording['streams'][stream]['file'].split('/').pop()) in recording['copies']:
-                    contextmenueitems.append( tuple((
-                        _('download'),
-                        "XBMC.RunPlugin(\"%s\")" % call.format('/download', params={
-                            'url': recording['streams'][stream]['file'],
-                            'epgid': recording['epgid'],
-                            'name': recording['streams'][stream]['name']
-                        }) )) )
+                if 'copies' in recording:
+                    if not str(recording['streams'][stream]['file'].split('/').pop()) in recording['copies']:
+                        contextmenueitems.append( tuple((
+                            _('download'),
+                            "XBMC.RunPlugin(\"%s\")" % call.format('/download', params={
+                                'url': recording['streams'][stream]['file'],
+                                'epgid': recording['epgid'],
+                                'name': recording['streams'][stream]['name']
+                            }) )) )
 
                 contextmenueitems.append( tuple((
                     _('userinfo'),
@@ -738,7 +735,7 @@ class creator:
         if not url:
             url = call.params['url']
 
-        if not os.path.isfile(url):
+        if not vfs.exists(url) and url.startswith('http'):
             url = self._downloadqueue(otr, url)
 
         if url:

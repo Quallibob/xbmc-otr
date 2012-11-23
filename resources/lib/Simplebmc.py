@@ -4,7 +4,9 @@ import xbmc
 import xbmcgui
 import urllib2
 import threading
-import re
+import random
+import string
+
 from resources.lib.Translations import _
 import Vfs as vfs
 
@@ -61,9 +63,12 @@ class Simplebmc:
 
         size = 0
         progress = False
-        destination_file_handler = None
+        temp_file_handler = None
         destination_file_path = None
         destination_file_name = None
+
+        def randomFilename(self, size=10, chars=string.ascii_uppercase + string.digits):
+            return ''.join(random.choice(chars) for x in range(size))
 
         def chunk_report(self, bytes_so_far, total_size):
             if total_size > 0:
@@ -90,25 +95,32 @@ class Simplebmc:
                 bytes_so_far += len(chunk)
 
                 if not chunk:
-                    self.destination_file_handler.close()
+                    self.temp_file_handler.close()
                     break
 
                 if self.progress:
                     if self.progress.iscanceled():
-                        self.destination_file_handler.close()
-                        vfs.delete(self.destination_file_path)
+                        self.temp_file_handler.close()
+                        vfs.delete(self.temp_file_path)
                         self.progress.close()
 
                 if report_hook:
-                    self.destination_file_handler.write( chunk )
+                    self.temp_file_handler.write( chunk )
                     report_hook(bytes_so_far, total_size)
 
             return bytes_so_far
 
-        def __init__(self, url, dest, progress=True, background=False):
+        def __init__(self, url, dest, progress=True, background=False, local=True):
+            xbmc.log(">>>> %s %s" %(url, dest))
+            if local:
+                self.destination_file_path = dest
+                self.temp_file_path = vfs.path.join(xbmc.translatePath('special://temp'), self.randomFilename(size=10))
+                self.temp_file_handler = open(self.temp_file_path, 'wb')
+            else:
+                self.destination_file_path = dest
+                self.temp_file_path =  dest + '.' + self.randomFilename(3)
+                self.temp_file_handler = vfs.File(self.temp_file_path, 'wb')
 
-            self.destination_file_handler = vfs.File(dest, 'wb')
-            self.destination_file_path = dest
             self.destination_file_name = url.split('/').pop()
 
             if progress:
@@ -121,6 +133,11 @@ class Simplebmc:
             def download(request):
                 response = urllib2.urlopen(request)
                 self.size = self.chunk_read(response)
+                xbmc.log("rename %s -> %s" % (self.temp_file_path, self.destination_file_path))
+                vfs.rename(self.temp_file_path, self.destination_file_path)
+                if vfs.exists(self.temp_file_path):
+                    vfs.copy(self.temp_file_path, self.destination_file_path)
+                    vfs.delete(self.temp_file_path)
 
             if background is True:
                 bg = Simplebmc().Background()
@@ -129,9 +146,9 @@ class Simplebmc:
                 download(request)
 
 
-    def noNull(self, string):
-        #return re.sub('\0', '', string)
-        return string.rstrip('\x00')
+    def noNull(self, s):
+        #return re.sub('\0', '', s)
+        return s.rstrip('\x00')
 
 
 

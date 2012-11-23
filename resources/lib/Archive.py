@@ -70,7 +70,8 @@ class Archive:
                 last_file_object = vfs.File(last_file, 'r')
                 last_content = last_file_object.read()
                 last_file_object.close()
-                return int(time.time() - int(__sx__.noNull(last_content)))
+                print "LAST:" + str(__sx__.noNull(last_content))
+                return int(time.time() - int( __sx__.noNull(last_content)) )
             except Exception, e:
                 xbmc.log("%s: %s" % (last_file, str(e)))
                 return -1
@@ -307,7 +308,10 @@ class Archive:
             if file_name.endswith('.json.v1'):
                 json_file = vfs.path.join(local_path, file_name)
                 reference_file = json_file.rstrip('.json.v1')
-                print '##' + str(reference_file)
+
+                if not vfs.exists(reference_file):
+                    continue
+
                 try:
                     file_info = json.loads( __sx__.noNull(vfs.File(json_file).read()) )
                 except Exception, e:
