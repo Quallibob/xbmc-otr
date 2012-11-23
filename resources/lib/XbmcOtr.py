@@ -20,7 +20,7 @@ import time
 import datetime
 import types
 import LocalCommonFunctions as CommonFunctions
-import LocalArchive
+import Archive
 import OtrHandler
 import Simplebmc
 
@@ -312,7 +312,7 @@ class creator:
 
 
         listing = list()
-        archive = LocalArchive.LocalArchive()
+        archive = Archive.Archive()
         archive.load()
         print "last: %s" % archive.LastFile(archive).last()
 
@@ -468,7 +468,7 @@ class creator:
                 _('do you want do delete existing local copies?')):
                     return False
 
-        archive = LocalArchive.LocalArchive()
+        archive = Archive.Archive()
         if 'epgid' in call.params and call.params['epgid']:
             archive.deleteLocalEpgidPath(epgid=call.params['epgid'])
         elif 'file' in call.params and call.params['file']:
@@ -479,7 +479,7 @@ class creator:
 
     def _refreshListing(self, otr):
         self.__login()
-        archive = LocalArchive.LocalArchive()
+        archive = Archive.Archive()
         archive.refresh(otr)
         xbmc.executebuiltin("Container.Refresh")
 
@@ -753,7 +753,7 @@ class creator:
             remote_url = self._downloadqueue(otr, call.params['url'])
             xbmc.log('got remote download url <%s> %s' % (type(remote_url), remote_url))
         if isinstance(remote_url, str) or isinstance(remote_url, unicode):
-            archive = LocalArchive.LocalArchive()
+            archive = Archive.Archive()
             local_path = archive.downloadEpgidItem(call.params['epgid'], call.params['name'], remote_url)
             if local_path and __addon__.getSetting('otrAskPlayAfterDownload') == 'true':
                 xbmc.executebuiltin("Container.Refresh")

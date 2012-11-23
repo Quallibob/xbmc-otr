@@ -34,7 +34,7 @@ def getKey(obj, *elements):
     return obj
 
 
-class LocalArchive:
+class Archive:
 
     path = "."
     recordings = []
@@ -44,6 +44,7 @@ class LocalArchive:
         __archive = None
 
         def __init__(self, archive):
+            assert isinstance(archive, Archive)
             self.__archive = archive
 
         def getFilename(self):
