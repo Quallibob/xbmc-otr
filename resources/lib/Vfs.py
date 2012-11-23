@@ -15,7 +15,7 @@ class PythonFile:
 
     __fo = None
 
-    def __init__(self, path, mode='r', unknown=False):
+    def __init__(self, path, mode='r'):
 
         if isinstance(mode, list):
             mode = list[0]
