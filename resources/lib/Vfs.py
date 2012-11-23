@@ -1,5 +1,6 @@
 import xbmc
 import xbmcvfs
+import urlparse
 import os
 
 ALLOW_FRODO=True
@@ -103,7 +104,7 @@ class Path:
 
     def join(self, *args):
         if '://' in args[0]:
-            return '/'.join( [a.rstrip('/') for a in args] )
+            return '/'.join( [a.rstrip('/').lstrip('/') for a in args] )
         else:
             return os.path.join(*args)
 

@@ -70,7 +70,6 @@ class Archive:
                 last_file_object = vfs.File(last_file, 'r')
                 last_content = last_file_object.read()
                 last_file_object.close()
-                print "LAST:" + str(__sx__.noNull(last_content))
                 return int(time.time() - int( __sx__.noNull(last_content)) )
             except Exception, e:
                 xbmc.log("%s: %s" % (last_file, str(e)))

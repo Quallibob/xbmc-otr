@@ -111,7 +111,6 @@ class Simplebmc:
             return bytes_so_far
 
         def __init__(self, url, dest, progress=True, background=False, local=True):
-            xbmc.log(">>>> %s %s" %(url, dest))
             if local:
                 self.destination_file_path = dest
                 self.temp_file_path = vfs.path.join(xbmc.translatePath('special://temp'), self.randomFilename(size=10))
@@ -133,11 +132,18 @@ class Simplebmc:
             def download(request):
                 response = urllib2.urlopen(request)
                 self.size = self.chunk_read(response)
-                xbmc.log("rename %s -> %s" % (self.temp_file_path, self.destination_file_path))
+
+                if progress:
+                    self.progress = xbmcgui.DialogProgress()
+                    self.progress.create("Move", self.destination_file_name)
+
+                xbmc.log("move %s -> %s" % (self.temp_file_path, self.destination_file_path))
                 vfs.rename(self.temp_file_path, self.destination_file_path)
                 if vfs.exists(self.temp_file_path):
                     vfs.copy(self.temp_file_path, self.destination_file_path)
                     vfs.delete(self.temp_file_path)
+
+                self.progress.close()
 
             if background is True:
                 bg = Simplebmc().Background()
