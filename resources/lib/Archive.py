@@ -367,6 +367,9 @@ class Archive:
                     if vfs.exists(json_file):
                         vfs.delete(json_file)
                 elif epgid and vfs.exists(path):
+                    for file_name in vfs.listdir(path)[1]:
+                        file_path = vfs.path.join(path, file_name)
+                        vfs.delete(file_path)
                     vfs.rmdir(path)
             except Exception, e:
                 xbmc.log("failed to delete %s (%s)" % (path, str(e)))
