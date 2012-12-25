@@ -176,13 +176,23 @@ class creator:
         listing = []
         for element in subs:
             li = xbmcgui.ListItem( label=_(element) )
-            li.addContextMenuItems(
-                [ 
-                  ( _('refresh listing'), 
-                    "Container.Refresh" ),
-                  ( _('userinfo'), 
-                    "XBMC.RunPlugin(%s)" % call.format('userinfo') ),
-                ], replaceItems=True )
+
+            if element == 'recordings':
+                li.addContextMenuItems(
+                    [
+                        ( _('refresh listing'),
+                          "XBMC.RunPlugin(\"%s\")" % call.format('/refreshlisting') ),
+                        ( _('userinfo'),
+                          "XBMC.RunPlugin(%s)" % call.format('userinfo') ),
+                        ], replaceItems=True )
+            else:
+                li.addContextMenuItems(
+                    [
+                      ( _('refresh listing'),
+                        "Container.Refresh" ),
+                      ( _('userinfo'),
+                        "XBMC.RunPlugin(%s)" % call.format('userinfo') ),
+                    ], replaceItems=True )
             listing.append( [
                 call.format(element),
                 li,
