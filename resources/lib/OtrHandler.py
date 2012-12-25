@@ -17,6 +17,7 @@ import os
 import base64
 import socket
 import pprint
+import time
 from resources.lib import XmlDict, pah2Nahbae4cahzihach1aep
 
 try:
@@ -32,6 +33,18 @@ URL_OTR="http://www.onlinetvrecorder.com"
 URL_SUBCODE="http://j.mp/otrsubcode"
 VERSION="0.6"
 VERSION_CHECK="http://shellshark.pythonanywhere.com/otr/xbmc-otr/currentstable?version=%s"
+
+
+
+cached_agent_string = None
+
+def getUserAgent():
+    global cached_agent_string
+    if cached_agent_string is None:
+        cached_agent_string = "XBMC/OtrHandler_%s_%s" % (VERSION, int(time.time()))
+    return cached_agent_string
+
+
 
 class OtrHandler:
     """
@@ -133,7 +146,7 @@ class OtrHandler:
         else:
             print url
         req = self.__url_request(url)
-        req.add_header('User-Agent', 'XBMC/OtrHandler')
+        req.add_header('User-Agent', getUserAgent())
         try:
             resp = self.__url_urlopen(req)
         except urllib2.URLError, e:
