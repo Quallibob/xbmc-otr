@@ -323,7 +323,7 @@ class creator:
         archive.load()
         print "last: %s" % archive.LastFile(archive).last()
 
-        if archive.LastFile(archive).last() < 0 or archive.LastFile(archive).last() > 3600:
+        if archive.LastFile(archive).last() < 0 or archive.LastFile(archive).last() > 900:
             self.__login()
             archive.refresh(otr)
 
