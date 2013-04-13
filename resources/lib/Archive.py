@@ -191,6 +191,17 @@ class Archive:
 
         # from pprint import pprint; pprint(element)
 
+        def getXbmcDate(otr_date):
+            try:
+                otr_date = time.strptime(element['BEGIN'], '%d.%m.%Y %H:%M:%S');
+            except Exception, e:
+                print("%s: %s" % (element['BEGIN'], e))
+                return otr_date
+            else:
+                otr_date = "%02d/%02d/%04d" % (otr_date.tm_mday, otr_date.tm_mon, otr_date.tm_year)
+                return otr_date
+
+
         item = {
             'epgid': element['EPGID'],
             'label': element['TITLE'],
@@ -205,7 +216,7 @@ class Archive:
         if 'DURATION' in element:   item['duration']    =  element['DURATION'].split()[0]
         if 'TITLE' in element:      item['title']       =  element['TITLE']
         if 'STATION' in element:    item['studio']      =  element['STATION']
-        if 'BEGIN' in element:      item['date']        =  element['BEGIN']
+        if 'BEGIN' in element:      item['date']        =  getXbmcDate(element['BEGIN'])
         if 'TITLE2' in element:     item['plot']        =  element['TITLE2']
 
         item['streams'] = self.__getStreamSelection(otr, item['epgid'])
