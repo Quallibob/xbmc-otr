@@ -310,9 +310,7 @@ class creator:
                 li.addContextMenuItems(contextmenueitems, replaceItems=True )
 
                 yield [
-                    call.format('/play', params={
-                        'url': recording['copies'][copy]['file'],
-                        'epgid': recording['epgid']}),
+                    recording['copies'][copy]['file'],
                     li,
                     False,
                     ]

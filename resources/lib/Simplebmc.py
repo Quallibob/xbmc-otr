@@ -110,8 +110,9 @@ class Simplebmc:
 
             return bytes_so_far
 
-        def __init__(self, url, dest, progress=True, background=False, local=True):
+        def __init__(self, url, dest, progress=True, background=False, local=False):
             if local:
+                # workaround for some bugy frodo pre-versions
                 self.destination_file_path = dest
                 self.temp_file_path = vfs.path.join(xbmc.translatePath('special://temp'), self.randomFilename(size=10))
                 self.temp_file_handler = open(self.temp_file_path, 'wb')
@@ -154,7 +155,8 @@ class Simplebmc:
 
     def noNull(self, s):
         #return re.sub('\0', '', s)
-        return s.rstrip('\x00')
+        #return s.rstrip('\x00')
+        return s
 
 
 

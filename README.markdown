@@ -11,7 +11,7 @@ This Add-On is not yet committed to the XBMC Repository because its still in dev
 * associated otr [forum thread](http://www.otrforum.com/showthread.php?67444)
 
 ## Manual Installation/Update:
-1. Download: [xbmc-otr-addon.zip](https://github.com/downloads/wrow/xbmc-otr/xbmc-otr-0.6.zip)
+1. Download: [xbmc-otr-addon.zip](http://dl.bintray.com/content/wrow/xbmc/xbmc-otr-0.6.zip?direct), [overview](https://bintray.com/pkg/show/general/wrow/xbmc/xbmc-otr)
 1. In XBMC: 
    1. Settings -> Add-ons -> Install from zip file
    1. Chose downloaded zip file
