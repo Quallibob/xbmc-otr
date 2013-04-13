@@ -324,6 +324,7 @@ class creator:
         if archive.LastFile(archive).last() < 0 or archive.LastFile(archive).last() > 900:
             self.__login()
             archive.refresh(otr)
+            archive.load()
 
         if not 'epgid' in call.params:
             for epgid in archive.recordings:
