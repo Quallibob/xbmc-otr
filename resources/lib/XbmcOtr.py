@@ -530,9 +530,11 @@ class creator:
                 weekstring = " -" + _(weekdelta<-1 and "%s weeks" or "%s week") % str(weekdelta*-1)
                 month_start_name = _(weekstart.date().strftime("%B")) 
                 month_end_name = _((weekstart.date()+datetime.timedelta(days=6)).strftime("%B"))
-                weekstring += " (%s - %s)" % (
-                        weekstart.date().strftime("%d. " + month_start_name + " %Y"), 
-                        (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. " + month_end_name + " %Y")
+                weekstring += u" (%s - %s)" % (
+                        weekstart.date().strftime("%d. ") + month_start_name + weekstart.date().strftime(" %Y"),
+                        (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. ") +
+                            month_end_name +
+                            (weekstart.date()+datetime.timedelta(days=6)).strftime(" %Y")
                         )
                 listitem = xbmcgui.ListItem(label=weekstring)
                 listitem.addContextMenuItems([], replaceItems=True )
@@ -568,10 +570,12 @@ class creator:
                 weekstring = " +" + _(weekdelta>1 and "%s weeks" or "%s week") % str(weekdelta)
                 month_start_name = _(weekstart.date().strftime("%B")) 
                 month_end_name = _((weekstart.date()+datetime.timedelta(days=6)).strftime("%B"))
-                weekstring += " (%s - %s)" % (
-                        weekstart.date().strftime("%d. " + month_start_name + " %Y"), 
-                        (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. " + month_end_name + " %Y")
-                        ) 
+                weekstring += u" (%s - %s)" % (
+                    weekstart.date().strftime("%d. ") + month_start_name + weekstart.date().strftime(" %Y"),
+                    (weekstart.date()+datetime.timedelta(days=6)).strftime("%d. ") +
+                    month_end_name +
+                    (weekstart.date()+datetime.timedelta(days=6)).strftime(" %Y")
+                    )
                 listitem = xbmcgui.ListItem(label=weekstring)
                 listitem.addContextMenuItems([], replaceItems=True )
                 listing.append(  [
@@ -750,6 +754,7 @@ class creator:
         if url:
             print "playing url %s" % url
             xbmc.Player().play(url)
+            print "player returned"
         return True
 
 
