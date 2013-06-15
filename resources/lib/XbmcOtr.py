@@ -758,6 +758,18 @@ class creator:
         return True
 
 
+    def _retrieve(self, otr, url=False):
+        import os, sys
+
+        PATH = "/storage/downloads/OTR/7392897/Die_tollkuehne_Fliegerin_Melli_Beese_13.05.01_12-40_mdr_30_TVOON_DE.mpg.avi"
+
+        fh = open(PATH, 'r')
+        buffer = True
+        while buffer:
+            buffer = fh.read(1024)
+            print(buffer)
+
+
     def _download(self, otr, remote_url=False):
         if not remote_url:
             remote_url = self._downloadqueue(otr, call.params['url'])
@@ -799,6 +811,7 @@ class creator:
                 '/deletelocalcopies': self._deleteLocalCopies,
                 '/refreshlisting': self._refreshListing,
                 '/play': self._play,
+                '/retrieve': self._retrieve,
                 '/download': self._download,
                 }
 
