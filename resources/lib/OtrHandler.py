@@ -84,30 +84,13 @@ class OtrHandler:
         """
         set cookie handler
         """
+
         if path:
             self.__url_cookiepath = path
         try:
             import cookielib
         except ImportError:
-            try:
-                import ClientCookie
-            except ImportError:
-                urlopen = urllib2.urlopen
-                Request = urllib2.Request
-            else:
-                urlopen = ClientCookie.urlopen
-                Request = ClientCookie.Request
-                self.__url_cookie = ClientCookie.MozillaCookieJar()
-                if path and os.path.isfile(path):
-                    #noinspection PyBroadException
-                    try:
-                        self.__url_cookie.load(path)
-                    except Exception, e:
-                        pass
-                opener = ClientCookie.build_opener(ClientCookie.HTTPCookieProcessor(self.__url_cookie))
-                ClientCookie.install_opener(opener)
-                self.__url_request = Request
-                self.__url_urlopen = urlopen
+            pass
         else:
             urlopen = urllib2.urlopen
             Request = urllib2.Request
@@ -120,9 +103,33 @@ class OtrHandler:
                     pass
             opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.__url_cookie))
             urllib2.install_opener(opener)
-            #opener.addheaders = [('User-agent', 'XBMC/OtrHandler')]
             self.__url_request = Request
             self.__url_urlopen = urlopen
+            return True
+
+        try:
+            import ClientCookie
+        except ImportError:
+            pass
+        else:
+            urlopen = ClientCookie.urlopen
+            Request = ClientCookie.Request
+            self.__url_cookie = ClientCookie.MozillaCookieJar()
+            if path and os.path.isfile(path):
+                #noinspection PyBroadException
+                try:
+                    self.__url_cookie.load(path)
+                except Exception, e:
+                    pass
+            opener = ClientCookie.build_opener(ClientCookie.HTTPCookieProcessor(self.__url_cookie))
+            ClientCookie.install_opener(opener)
+            self.__url_request = Request
+            self.__url_urlopen = urlopen
+            return True
+
+        # nothing found
+        raise Exception('no cookie library found')
+
 
     def __getXMLDict(self, xml, encoding="latin9"):
         """

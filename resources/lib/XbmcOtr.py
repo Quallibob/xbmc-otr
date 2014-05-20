@@ -22,6 +22,7 @@ import LocalCommonFunctions as CommonFunctions
 import Archive
 import OtrHandler
 import Simplebmc
+import traceback
 
 from Translations import _
 from Call import call
@@ -97,6 +98,7 @@ class housekeeper:
             self._otr = OtrHandler.OtrHandler()
         except Exception, e:
             print "login failed (1): %s" % e
+            xbmc.log(traceback.format_exc(), level=xbmc.LOGERROR)
             xbmcgui.Dialog().ok(
                 __title__,
                 _('login failed'),  
@@ -130,6 +132,7 @@ class housekeeper:
             self._otr.login(username, password)
         except Exception, e:
             print "login failed (2): %s" % e
+            xbmc.log(traceback.format_exc(), level=xbmc.LOGERROR)
             xbmcgui.Dialog().ok(
                 __title__,
                 _('login failed'),
@@ -749,25 +752,14 @@ class creator:
             url = call.params['url']
 
         if not vfs.exists(url) and url.startswith('http'):
-            url = self._downloadqueue(otr, url)
+            remote_url = self._downloadqueue(otr, url)
 
         if url:
-            print "playing url %s" % url
-            xbmc.Player().play(url)
+            xbmc.log('got remote download url <%s> %s' % (type(remote_url), remote_url))
+            return False
+            xbmc.Player().play(remote_url)
             print "player returned"
         return True
-
-
-    def _retrieve(self, otr, url=False):
-        import os, sys
-
-        PATH = "/storage/downloads/OTR/7392897/Die_tollkuehne_Fliegerin_Melli_Beese_13.05.01_12-40_mdr_30_TVOON_DE.mpg.avi"
-
-        fh = open(PATH, 'r')
-        buffer = True
-        while buffer:
-            buffer = fh.read(1024)
-            print(buffer)
 
 
     def _download(self, otr, remote_url=False):
@@ -811,26 +803,13 @@ class creator:
                 '/deletelocalcopies': self._deleteLocalCopies,
                 '/refreshlisting': self._refreshListing,
                 '/play': self._play,
-                '/retrieve': self._retrieve,
                 '/download': self._download,
                 }
 
         #get the list
         sub = getKey(path, call.path)
         if isinstance(sub, list):
-            ret = self._createDir(sub)
-            if call.path == '/':
-                if otr.newVersionAvailable():
-                    # main dir and new version available
-                    # TODO! remove in repo release!
-                    print "new version available!"
-                    ret.append(
-                        [
-                        call.format(),
-                        xbmcgui.ListItem( label=_('new version available') ),
-                        False
-                        ])
-            self.listing = ret
+            self.listing = self._createDir(sub)
         elif isinstance(sub, types.MethodType):
             self.listing = sub(otr)
         else:
