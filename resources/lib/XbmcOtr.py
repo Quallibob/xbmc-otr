@@ -434,7 +434,7 @@ class creator:
             prdialog.update(100)
             prdialog.close()
             if len(res) > 0:
-                xbmc.executebuiltin('Notification("%s", "%s")' % (
+                xbmc.executebuiltin('show_notification("%s", "%s")' % (
                     __title__,
                     _("scheduleJob: %s" % res) ) )
             return True
@@ -458,7 +458,7 @@ class creator:
         if not self._deleteLocalCopies(otr):
             xbmc.executebuiltin("Container.Refresh")
 
-        xbmc.executebuiltin('Notification("%s", "%s")' % (
+        xbmc.executebuiltin('show_notification("%s", "%s")' % (
             __title__,
             _("job deleted") ) )
 

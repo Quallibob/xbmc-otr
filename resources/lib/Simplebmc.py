@@ -20,7 +20,7 @@ class Simplebmc:
             img = "False"
         duration = int(duration)*1000
         print "%s: %s" % (title, str(text))
-        return xbmc.executebuiltin('Notification("%s", "%s", %s, %s)' % (title, _(str(text)), duration, img))
+        return xbmc.executebuiltin('show_notification("%s", "%s", %s, %s)' % (title, _(str(text)), duration, img))
 
 
     def humanSize(self, num):
