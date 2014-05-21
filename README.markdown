@@ -8,7 +8,6 @@ This Add-On is not yet committed to the XBMC Repository because its still in dev
 
 ## Support me: 
 * [![flattr](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/t/800518)
-* associated otr [forum thread](http://www.otrforum.com/showthread.php?67444)
 
 ## Manual Installation/Update:
 1. Download: [xbmc-otr-addon.zip](http://dl.bintray.com/content/wrow/xbmc/xbmc-otr-0.6.zip?direct), [overview](https://bintray.com/pkg/show/general/wrow/xbmc/xbmc-otr)
@@ -20,16 +19,3 @@ This Add-On is not yet committed to the XBMC Repository because its still in dev
 ## Manual Installation/Update with git:
 
 If you are familiar with git you can also checkout the sourcecode into your xbmc-addon directory. 
-
-## Warning:
-
-**This is Beta Software**
-
-A beta version is an (almost) feature complete test version that is still in development. There might be bugs, so don’t be surprised if you encounter some issues.
-
-We developers depend on the feedback provided by our testers, so that we can sweep out remaining issues and finally release a stable version.
-
-If you’re not an experienced computer user, and if you don’t want to manage problems you may encounter when using such a test version, then please don’t install this beta!
-
-If you find real bugs or other issues, then please don’t hesitate to [file a bug](https://github.com/wrow/xbmc-otr/issues).
-
